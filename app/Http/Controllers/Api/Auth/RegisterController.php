@@ -80,7 +80,7 @@ class RegisterController extends Controller
             //$this->twilioSms($phone, 'this sms for testing.');
             //$this->bdSms($phone, 'this sms for testing. thard sms');
 
-            $data = User::select($this->select)->with('roles')->find($user->id);
+            $data = User::select($this->select)->find($user->id);
 
             // Mail::to($user->email)->send(new OtpMail($user->otp, $user, 'Verify Your Email Address'));
 

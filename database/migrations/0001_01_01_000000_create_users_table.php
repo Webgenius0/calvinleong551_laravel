@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('password');
             $table->string('phone')->nullable();
             $table->date('dob')->nullable();
+            $table->enum('gender', ['male', 'female', 'others', 'non_binary'])->nullable();
             $table->timestamp('last_activity_at')->nullable();
             $table->string('stripe_customer_id')->nullable();
             $table->string('stripe_account_id')->nullable();

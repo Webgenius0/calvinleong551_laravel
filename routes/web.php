@@ -38,9 +38,6 @@ Route::controller(NotificationController::class)->prefix('notification')->name('
 require __DIR__.'/auth.php';
 
 
-Route::post('/boosting/webhook', [ProductController::class, 'handleWebhook']);
-Route::post('/checkout/webhook', [StripeWebHookController::class, 'handleWebhook']);
 
-Route::post('/rental/webhook', [RentedPaymentController::class, 'handleWebhook']);
 
 

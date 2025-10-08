@@ -19,12 +19,12 @@ class UserController extends Controller
     public function __construct()
     {
         parent::__construct();
-        $this->select = ['id', 'name','phone', 'slug', 'last_name', 'address', 'email', 'avatar', 'otp_verified_at', 'last_activity_at', 'stripe_account_id'];
+        $this->select = ['id', 'name', 'last_name', 'email', 'phone', 'dob', 'gender', 'slug', 'avatar', 'otp_verified_at'];
     }
 
     public function me()
     {
-        $user = User::select($this->select)->with('roles')->find(auth('api')->user()->id);
+        $user = User::select($this->select)->find(auth('api')->user()->id);
         if (!$user) {
             return Helper::jsonResponse(false, 'User not found', 404);
         }
@@ -45,8 +45,9 @@ class UserController extends Controller
             'address' => 'nullable|string|max:255',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
             'password' => 'nullable|string|min:6|confirmed',
-            'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
+            'dob' => 'nullable|date',
+            'gender' => 'nullable|in:male,female,others,non_binary',
         ]);
 
         if (!empty($validatedData['password'])) {
@@ -68,7 +69,7 @@ class UserController extends Controller
 
         $user->update($validatedData);
 
-        $data = User::select($this->select)->with('roles')->find($user->id);
+        $data = User::select($this->select)->find($user->id);
         return Helper::jsonResponse(true, 'Profile updated successfully', 200, $data);
     }
 

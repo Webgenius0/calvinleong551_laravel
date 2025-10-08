@@ -68,7 +68,7 @@ class LoginController extends Controller
             //* Generate token if email is verified
             $token = auth('api')->login($user);
 
-            $data = User::select($this->select)->with('roles')->find(auth('api')->user()->id);
+            $data = User::select($this->select)->find(auth('api')->user()->id);
 
             return response()->json([
                 'status'     => true,

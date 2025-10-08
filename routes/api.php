@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\BoostingPayment;
+use App\Models\Contact;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\Auth\UserController;
@@ -20,17 +20,16 @@ use App\Http\Controllers\Api\Frontend\SettingsController;
 use App\Http\Controllers\Api\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\Frontend\SubscriberController;
 use App\Http\Controllers\Api\Frontend\SocialLinksController;
+
 use App\Http\Controllers\Api\Frontend\SubcategoryController;
+use App\Http\Controllers\Api\Frontend\Footer\FooterController;
 use App\Http\Controllers\Api\Frontend\PrivecyPolicyController;
-use App\Http\Controllers\Api\Frontend\Users\UsersListController;
-use App\Http\Controllers\Api\Gateway\Stripe\StripeWebHookController;
-use App\Http\Controllers\Api\Gateway\Stripe\StripeOnBoardingController;
-use App\Http\Controllers\Api\RefundRequest\RefundRequestController;
+use App\Http\Controllers\Api\Frontend\Blogs\BlogListController;
+use App\Http\Controllers\Api\Frontend\Contactus\ContactusController;
 
 //page
 Route::get('/page/home', [HomeController::class, 'index']);
 
-Route::get('/category', [categoryController::class, 'index']);
 Route::get('/subcategory', [SubcategoryController::class, 'index']);
 
 Route::get('/social/links', [SocialLinksController::class, 'index']);
@@ -39,19 +38,6 @@ Route::get('/faq', [FaqController::class, 'index']);
 
 Route::post('subscriber/store', [SubscriberController::class, 'store'])->name('api.subscriber.store');
 
-/*
-# Post
-*/
-Route::middleware(['auth:api'])->controller(PostController::class)->prefix('auth/post')->group(function () {
-    Route::get('/', 'index');
-    Route::post('/store', 'store');
-    Route::get('/show/{id}', 'show');
-    Route::post('/update/{id}', 'update');
-    Route::delete('/delete/{id}', 'destroy');
-});
-
-Route::get('/posts', [PostController::class, 'posts']);
-Route::get('/post/show/{post_id}', [PostController::class, 'post']);
 
 Route::middleware(['auth:api'])->controller(ImageController::class)->prefix('auth/post/image')->group(function () {
     Route::get('/', 'index');
@@ -88,7 +74,6 @@ Route::group(['middleware' => ['auth:api', 'api-otp']], function ($router) {
     Route::post('/update-profile', [UserController::class, 'updateProfile']);
     Route::post('/update-avatar', [UserController::class, 'updateAvatar']);
     Route::delete('/delete-profile', [UserController::class, 'destroy']);
-    Route::post('/change-password', [UserController::class, 'changePassword']);
 });
 
 /*
@@ -134,56 +119,20 @@ Route::middleware(['auth:api'])->controller(ChatController::class)->prefix('auth
 Route::prefix('cms')->name('cms.')->group(function () {
     Route::get('home', [HomeController::class, 'index'])->name('home');
     Route::get('how-it-works', [HomeController::class, 'howItWorks'])->name('how_it_works');
-    Route::get('/how-it-works/details/{slug}', [HomeController::class, 'howItWorksDetails']);
 });
+
+Route::get('/footer', [FooterController::class, 'index']);
 Route::get('/privacy-policy', [PrivecyPolicyController::class, 'index']);
 
 // dynamic page
 Route::get('dynamic/page', [PageController::class, 'index']);
 Route::get('dynamic/page/show/{slug}', [PageController::class, 'show']);
-Route::post('/subscribe', [SubscriberController::class, 'subscribe']);
+Route::post('/subscribe',[SubscriberController::class,'subscribe']);
 
-
-Route::controller(UsersListController::class)->group(function () {
-    Route::get('/user/search', 'search');
-    Route::get('/seller-details/{slug}', 'userDetails');
+Route::controller(BlogListController::class)->group(function(){
+    Route::get('/blog-list', 'index');
+    Route::get('/blog-details/{slug}', 'show');
 });
 
-
-Route::get('/boost-plan/success', [BoostingPayment::class, 'successBoostPayment'])->name('boost.plan.success');
-Route::get('/boost-plan/cancel', [BoostingPayment::class, 'cancelBoostPayment'])->name('boost.plan.cancel');
-
-Route::controller(StripeOnBoardingController::class)->prefix('payment/stripe/account')->name('payment.stripe.account.')->group(function () {
-    Route::middleware(['auth:api'])->get('/connect', 'accountConnect')->name('connect');
-    Route::get('/connect/success/{account_id}', 'accountSuccess')->name('connect.success');
-    Route::get('/connect/refresh/{account_id}', 'accountRefresh')->name('connect.refresh');
-    Route::middleware(['auth:api'])->get('/url', 'AccountUrl')->name('url');
-    Route::middleware(['auth:api'])->get('/info', 'accountInfo')->name('info');
-    Route::middleware(['auth:api'])->post('/withdraw', 'withdraw')->name('withdraw');
-});
-
-Route::post('/stripe/connect', [StripeOnBoardingController::class, 'redirectToStripeConnect'])->name('stripe.connect');
-Route::get('/stripe/connect/callback', [StripeOnBoardingController::class, 'handleStripeConnectCallback'])->name('stripe.connect.callback');
-
-// Refresh + Success routes for onboarding
-Route::get('/account/connect/refresh/{account_id}', [StripeOnBoardingController::class, 'refresh'])->name('api.payment.stripe.account.connect.refresh');
-Route::get('/account/connect/success/{account_id}', [StripeOnBoardingController::class, 'success'])->name('api.payment.stripe.account.connect.success');
-
-// Manually refresh onboarding
-Route::get('/account/refresh/{account_id}', [StripeOnBoardingController::class, 'accountRefresh']);
-
-// Express login link
-Route::get('/account/login-link', [StripeOnBoardingController::class, 'createLoginLink']);
-
-
-Route::post('/checkout', [StripeWebHookController::class, 'createCheckoutSession'])->name('checkout');
-Route::get('/payment/success', [StripeWebHookController::class, 'success'])->name('payment.success');
-Route::get('/payment/cancel', [StripeWebHookController::class, 'cancel'])->name('payment.cancel');
-Route::get('/seller-balance', [StripeWebHookController::class, 'getSellerBalance'])->middleware('auth:api');
-
-Route::post('/send-request',[RefundRequestController::class,'refundRequest']);
-// approved refund or cancle
-Route::post('/update-refund', [RefundRequestController::class, 'processRefund']);
-// seller get request
-Route::get('/get-request',[RefundRequestController::class,'getRefundRequest']);
+Route::post('/contact-us',[ContactusController::class,'store']);
 
