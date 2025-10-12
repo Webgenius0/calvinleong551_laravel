@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\Frontend\Footer\FooterController;
 use App\Http\Controllers\Api\Frontend\PrivecyPolicyController;
 use App\Http\Controllers\Api\Frontend\Blogs\BlogListController;
 use App\Http\Controllers\Api\Frontend\Contactus\ContactusController;
+use App\Http\Controllers\Api\Frontend\AiSuggestion\WeddingSuggestionController;
 
 //page
 Route::get('/page/home', [HomeController::class, 'index']);
@@ -43,6 +44,9 @@ Route::middleware(['auth:api'])->controller(ImageController::class)->prefix('aut
     Route::get('/', 'index');
     Route::post('/store', 'store');
     Route::get('/delete/{id}', 'destroy');
+});
+Route::middleware(['auth:api'])->controller(WeddingSuggestionController::class)->group(function () {
+    Route::post('/wedding-suggestions', 'generateSuggestions');
 });
 
 
@@ -121,7 +125,7 @@ Route::prefix('cms')->name('cms.')->group(function () {
     Route::get('how-it-works', [HomeController::class, 'howItWorks'])->name('how_it_works');
 });
 
-Route::get('/footer', [FooterController::class, 'index']);
+
 Route::get('/privacy-policy', [PrivecyPolicyController::class, 'index']);
 
 // dynamic page
@@ -129,10 +133,5 @@ Route::get('dynamic/page', [PageController::class, 'index']);
 Route::get('dynamic/page/show/{slug}', [PageController::class, 'show']);
 Route::post('/subscribe',[SubscriberController::class,'subscribe']);
 
-Route::controller(BlogListController::class)->group(function(){
-    Route::get('/blog-list', 'index');
-    Route::get('/blog-details/{slug}', 'show');
-});
 
-Route::post('/contact-us',[ContactusController::class,'store']);
 
