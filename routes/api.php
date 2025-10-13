@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\Frontend\SubscriberController;
 use App\Http\Controllers\Api\Frontend\SocialLinksController;
 
 use App\Http\Controllers\Api\Frontend\SubcategoryController;
+use App\Http\Controllers\Api\Frontend\Ai\AIWeddingController;
 use App\Http\Controllers\Api\Frontend\Footer\FooterController;
 use App\Http\Controllers\Api\Frontend\PrivecyPolicyController;
 use App\Http\Controllers\Api\Frontend\Blogs\BlogListController;
@@ -45,8 +46,11 @@ Route::middleware(['auth:api'])->controller(ImageController::class)->prefix('aut
     Route::post('/store', 'store');
     Route::get('/delete/{id}', 'destroy');
 });
-Route::middleware(['auth:api'])->controller(WeddingSuggestionController::class)->group(function () {
-    Route::post('/wedding-suggestions', 'generateSuggestions');
+// Route::middleware(['auth:api'])->controller(WeddingSuggestionController::class)->group(function () {
+//     Route::post('/wedding-suggestions', 'generateSuggestions');
+// });
+Route::middleware(['auth:api'])->controller(AIWeddingController::class)->group(function () {
+    Route::post('/wedding-suggestions', 'generateSuggestion');
 });
 
 
