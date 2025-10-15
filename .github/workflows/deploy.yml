@@ -1,0 +1,19 @@
+name: Deploy project to our server
+on:
+  push:
+    branches:
+      - dev
+jobs:
+  FTP-Deploy-Action:
+    name: FTP-Deploy-Action
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.1.0
+        with:
+          fetch-depth: 2
+      - name: FTP-Deploy-Action
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        with:
+          server: ftp.softvencefsd.xyz
+          username: calvinleong551@calvinleong551.softvencefsd.xyz
+          password: "2R)H2%}vgz+qSR4~"
