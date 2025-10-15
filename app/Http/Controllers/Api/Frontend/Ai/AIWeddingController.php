@@ -20,61 +20,72 @@ class AIWeddingController extends Controller
     public function generateSuggestion(Request $request)
     {
         $request->validate([
-            'bride_image' => 'required|image',
-            'groom_image' => 'required|image',
+            'bride_image' => 'required|image|mimes:jpg,jpeg,png',
+            'groom_image' => 'required|image|mimes:jpg,jpeg,png',
             'season' => 'required|string',
         ]);
 
-        // ✅ 1. Bride & Groom image save locally
-        if ($request->hasFile('bride_image')) {
-            $brideImage = $request->file('bride_image');
-            $brideName = time() . '_bride.' . $brideImage->getClientOriginalExtension();
-            $brideImage->move(public_path('uploads/bride'), $brideName);
-            $bridePath = 'uploads/bride/' . $brideName;
-        }
+        // ✅ 1. Bride image upload & store
+        $brideFile = $request->file('bride_image');
+        $brideName = time() . '_bride.' . $brideFile->getClientOriginalExtension();
+        $bridePath = 'uploads/bride/' . $brideName;
+        $brideFile->move(public_path('uploads/bride'), $brideName);
 
-        if ($request->hasFile('groom_image')) {
-            $groomImage = $request->file('groom_image');
-            $groomName = time() . '_groom.' . $groomImage->getClientOriginalExtension();
-            $groomImage->move(public_path('uploads/groom'), $groomName);
-            $groomPath = 'uploads/groom/' . $groomName;
-        }
+        // ✅ 2. Groom image upload & store
+        $groomFile = $request->file('groom_image');
+        $groomName = time() . '_groom.' . $groomFile->getClientOriginalExtension();
+        $groomPath = 'uploads/groom/' . $groomName;
+        $groomFile->move(public_path('uploads/groom'), $groomName);
 
+        // ✅ 3. Convert stored images to Base64 (not temporary)
+        $brideBase64 = base64_encode(file_get_contents(public_path($bridePath)));
+        $groomBase64 = base64_encode(file_get_contents(public_path($groomPath)));
 
-        // ✅ 2. Convert to Base64 for API
-        $brideBase64 = base64_encode(file_get_contents($bridePath));
-        $groomBase64 = base64_encode(file_get_contents($groomPath));
+        try {
+            // ✅ 4. Call Gemini service with stored images
+            $resultJson = $this->skinToneService->analyzeSkinTone(
+                $brideBase64,
+                $groomBase64,
+                $request->season
+            );
 
-        // ✅ 3. Call Gemini API
-        $resultJson = $this->skinToneService->analyzeSkinTone($brideBase64, $groomBase64, $request->season);
-        Log::info('Gemini Raw Response: ' . $resultJson);
+            Log::info('Gemini Raw Response: ' . $resultJson);
 
-        $result = json_decode($resultJson, true);
+            $result = json_decode($resultJson, true);
 
-        if (!$result) {
+            if (!$result) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to parse Gemini AI response',
+                ], 500);
+            }
+
+            // ✅ 5. Save to DB
+            $suggestion = AISuggestion::create([
+                'bride_image' => $bridePath,
+                'groom_image' => $groomPath,
+                'bride_skin_tone' => $result['bride']['skin_tone'] ?? null,
+                'bride_color_code' => $result['bride']['color_code'] ?? null,
+                'groom_skin_tone' => $result['groom']['skin_tone'] ?? null,
+                'groom_color_code' => $result['groom']['color_code'] ?? null,
+                'season_name' => $result['season']['name'] ?? $request->season,
+                'season_palette' => json_encode($result['season']['palette'] ?? []),
+                'season_description' => $result['season']['description'] ?? '',
+                'season_image' => $result['season']['image'] ?? null,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $suggestion,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Gemini API error: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to parse AI response',
+                'message' => 'Gemini API error: ' . $e->getMessage(),
             ], 500);
         }
-
-        // ✅ 4. Save response + images to DB
-        $suggestion = AISuggestion::create([
-            'bride_image' => $bridePath,
-            'groom_image' => $groomPath,
-            'bride_skin_tone' => $result['bride']['skin_tone'],
-            'bride_color_code' => $result['bride']['color_code'],
-            'groom_skin_tone' => $result['groom']['skin_tone'],
-            'groom_color_code' => $result['groom']['color_code'],
-            'season_name' => $result['season']['name'],
-            'season_palette' => json_encode($result['season']['palette']),
-            'season_description' => $result['season']['description'],
-            'season_image' => $result['season']['image'] ?? null, // 🆕 season image save
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'data' => $suggestion,
-        ]);
     }
 }
