@@ -9,18 +9,23 @@ class AISuggestion extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'bride_image',
-        'groom_image',
-        'bride_skin_tone',
-        'bride_color_code',
-        'groom_skin_tone',
-        'groom_color_code',
-        'season_name',
-        'season_palette',
-        'season_description',
-        'season_image'
-    ];
+    protected $guarded = ['id'];
+
+    // protected $fillable = [
+    //     'bride_image',
+    //     'groom_image',
+    //     'bride_skin_tone',
+    //     'bride_color_code',
+    //     'groom_skin_tone',
+    //     'groom_color_code',
+    //     'season_name',
+    //     'season_palette',
+    //     'season_description',
+    //     'season_image',
+    //     'groom_edited_image',
+    //     'bride_edited_image',
+    //     'season_theme_image',
+    // ];
 
     protected $casts = [
         'season_palette' => 'array',

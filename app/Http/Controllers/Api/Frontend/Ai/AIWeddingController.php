@@ -6,11 +6,12 @@ use App\Models\AISuggestion;
 use Illuminate\Http\Request;
 use App\Services\SkinToneService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
 
 class AIWeddingController extends Controller
 {
-    protected $skinToneService;
+    protected SkinToneService $skinToneService;
 
     public function __construct(SkinToneService $skinToneService)
     {
@@ -20,72 +21,136 @@ class AIWeddingController extends Controller
     public function generateSuggestion(Request $request)
     {
         $request->validate([
-            'bride_image' => 'required|image|mimes:jpg,jpeg,png',
-            'groom_image' => 'required|image|mimes:jpg,jpeg,png',
-            'season' => 'required|string',
+            'bride_image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
+            'groom_image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
+            'season' => 'required|string|in:spring,summer,autumn,winter',
         ]);
 
-        // ✅ 1. Bride image upload & store
-        $brideFile = $request->file('bride_image');
-        $brideName = time() . '_bride.' . $brideFile->getClientOriginalExtension();
-        $bridePath = 'uploads/bride/' . $brideName;
-        $brideFile->move(public_path('uploads/bride'), $brideName);
-
-        // ✅ 2. Groom image upload & store
-        $groomFile = $request->file('groom_image');
-        $groomName = time() . '_groom.' . $groomFile->getClientOriginalExtension();
-        $groomPath = 'uploads/groom/' . $groomName;
-        $groomFile->move(public_path('uploads/groom'), $groomName);
-
-        // ✅ 3. Convert stored images to Base64 (not temporary)
-        $brideBase64 = base64_encode(file_get_contents(public_path($bridePath)));
-        $groomBase64 = base64_encode(file_get_contents(public_path($groomPath)));
-
         try {
-            // ✅ 4. Call Gemini service with stored images
-            $resultJson = $this->skinToneService->analyzeSkinTone(
-                $brideBase64,
-                $groomBase64,
-                $request->season
-            );
+            // Upload original images
+            $bridePath = $this->uploadFile($request->file('bride_image'), 'bride');
+            $groomPath = $this->uploadFile($request->file('groom_image'), 'groom');
 
-            Log::info('Gemini Raw Response: ' . $resultJson);
+            // Convert to base64 for AI processing
+            $brideBase64 = base64_encode(file_get_contents(public_path($bridePath)));
+            $groomBase64 = base64_encode(file_get_contents(public_path($groomPath)));
 
-            $result = json_decode($resultJson, true);
+            Log::info('Starting AI analysis for wedding suggestions', [
+                'season' => $request->season,
+                'bride_image_size' => strlen($brideBase64),
+                'groom_image_size' => strlen($groomBase64)
+            ]);
 
-            if (!$result) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Failed to parse Gemini AI response',
-                ], 500);
-            }
+            // Get AI analysis
+            $result = $this->skinToneService->analyzeSkinTone($brideBase64, $groomBase64, $request->season);
 
-            // ✅ 5. Save to DB
+            // Log the analysis results
+            Log::info('AI Analysis Results:', [
+                'bride_skin_tone' => $result['bride']['skin_tone'] ?? 'Unknown',
+                'groom_skin_tone' => $result['groom']['skin_tone'] ?? 'Unknown',
+                'bride_colors' => $result['bride']['matching_colors'] ?? [],
+                'groom_colors' => $result['groom']['matching_colors'] ?? [],
+                'season_palette' => $result['season']['palette'] ?? []
+            ]);
+
+            // Save images (they might be null)
+            $brideEditedPath = $this->saveBase64Image($result['bride']['edited_image'], 'bride_edited');
+            $groomEditedPath = $this->saveBase64Image($result['groom']['edited_image'], 'groom_edited');
+            $seasonThemePath = $this->saveBase64Image($result['season']['image'], 'season_theme');
+
+            // Create database record
             $suggestion = AISuggestion::create([
                 'bride_image' => $bridePath,
                 'groom_image' => $groomPath,
+                'bride_edited_image' => $brideEditedPath,
+                'groom_edited_image' => $groomEditedPath,
+                'season_theme_image' => $seasonThemePath,
                 'bride_skin_tone' => $result['bride']['skin_tone'] ?? null,
-                'bride_color_code' => $result['bride']['color_code'] ?? null,
+                'bride_color_code' => json_encode($result['bride']['color_code'] ?? []),
+                'bride_matching_colors' => json_encode($result['bride']['matching_colors'] ?? []),
                 'groom_skin_tone' => $result['groom']['skin_tone'] ?? null,
-                'groom_color_code' => $result['groom']['color_code'] ?? null,
+                'groom_color_code' => json_encode($result['groom']['color_code'] ?? []),
+                'groom_matching_colors' => json_encode($result['groom']['matching_colors'] ?? []),
                 'season_name' => $result['season']['name'] ?? $request->season,
                 'season_palette' => json_encode($result['season']['palette'] ?? []),
                 'season_description' => $result['season']['description'] ?? '',
-                'season_image' => $result['season']['image'] ?? null,
             ]);
 
             return response()->json([
-                'success' => true,
+                'success' => true, 
                 'data' => $suggestion,
+                'message' => 'Wedding style analysis completed successfully',
+                'images_generated' => false
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Gemini API error: ' . $e->getMessage());
+            Log::error('AI Wedding generation error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false, 
+                'message' => 'Analysis service is temporarily unavailable. Please try again later.'
+            ], 500);
+        }
+    }
 
+    public function testModels(Request $request)
+    {
+        try {
+            $results = $this->skinToneService->testAvailableModels();
+            return response()->json([
+                'success' => true,
+                'models' => $results
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gemini API error: ' . $e->getMessage(),
+                'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    private function uploadFile($file, $folder): string
+    {
+        $name = time() . "_" . Str::random(8) . "_{$folder}." . $file->getClientOriginalExtension();
+        $directory = public_path("uploads/{$folder}");
+        
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+        
+        $path = "uploads/{$folder}/" . $name;
+        $file->move($directory, $name);
+        return $path;
+    }
+
+    private function saveBase64Image(?string $base64, string $folder): ?string
+    {
+        if (!$base64) {
+            return null;
+        }
+
+        $directory = public_path("uploads/{$folder}");
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        if (strpos($base64, 'data:image') === 0) {
+            $base64 = preg_replace('#^data:image/\w+;base64,#i', '', $base64);
+        }
+
+        $fileName = $folder . '_' . Str::random(12) . '.png';
+        $filePath = "uploads/{$folder}/" . $fileName;
+
+        try {
+            $imageData = base64_decode($base64);
+            if ($imageData === false) {
+                return null;
+            }
+
+            file_put_contents(public_path($filePath), $imageData);
+            return $filePath;
+
+        } catch (\Exception $e) {
+            return null;
         }
     }
 }

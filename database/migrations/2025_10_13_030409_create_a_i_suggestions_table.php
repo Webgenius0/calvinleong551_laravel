@@ -17,9 +17,9 @@ return new class extends Migration
             $table->string('groom_image');    // groom image path
             $table->string('season_image')->nullable();    // season image path
             $table->string('bride_skin_tone')->nullable();
-            $table->string('bride_color_code')->nullable();
+            $table->json('bride_color_code')->nullable();
             $table->string('groom_skin_tone')->nullable();
-            $table->string('groom_color_code')->nullable();
+            $table->json('groom_color_code')->nullable();
             $table->string('season_name')->nullable();
             $table->json('season_palette')->nullable();  // store as array (json)
             $table->text('season_description')->nullable();

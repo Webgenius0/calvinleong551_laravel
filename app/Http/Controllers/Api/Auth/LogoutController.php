@@ -28,7 +28,7 @@ class LogoutController extends Controller
 
                 Auth::logout('api');
                 
-                return Helper::jsonResponse(true, 'Logged out successfully. Token revoked.', 200);
+                return Helper::jsonResponse(true, 'Logged out successfully.', 200);
             } else {
                 return Helper::jsonErrorResponse( 'User not authenticated', 401);
             }
