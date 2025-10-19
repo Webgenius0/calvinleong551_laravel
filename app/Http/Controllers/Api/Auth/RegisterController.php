@@ -91,11 +91,9 @@ class RegisterController extends Controller
             return response()->json([
                 'status'     => true,
                 'message'    => 'User register in successfully.Verify you email',
-                'code'       => 200,
-                'token_type' => 'bearer',
-                'token'      => $token,
-                'expires_in' => auth('api')->factory()->getTTL() * 60,
-                'data' => $data
+                'code'       => 200,             
+                'otp'        => $user->otp,
+                'expires_in' => auth('api')->factory()->getTTL() * 60,              
             ], 200);
             
         } catch (Exception $e) {
@@ -131,8 +129,16 @@ class RegisterController extends Controller
             $user->otp               = null;
             $user->otp_expires_at    = null;
             $user->save();
+             $data = User::select($this->select)->find($user->id);
 
-            return Helper::jsonResponse(true, 'Email verification successful.', 200);
+            return response()->json([
+                'status'     => true,
+                'message'    => 'Email verified successfully.',
+                'code'       => 200,
+                'token'      => auth('api')->login($user),
+                'expires_in' => auth('api')->factory()->getTTL() * 60,
+                'data'       => $data
+            ], 200);
         } catch (Exception $e) {
             return Helper::jsonErrorResponse($e->getMessage(), $e->getCode());
         }

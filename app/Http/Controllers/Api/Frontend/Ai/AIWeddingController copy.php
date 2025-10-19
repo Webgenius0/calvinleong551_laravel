@@ -14,11 +14,11 @@ class AIWeddingController extends Controller
     /** 
      * Bride, Groom, Seasonal ইমেজ রাখার জন্য কনস্ট্যান্ট ফোল্ডার পাথ
      */
-    private const FOLDER_BRIDE = 'uploads/bride';
-    private const FOLDER_GROOM = 'uploads/groom';
-    private const FOLDER_BRIDE_EDITED = 'uploads/bride_edited';
-    private const FOLDER_GROOM_EDITED = 'uploads/groom_edited';
-    private const FOLDER_SEASON = 'uploads/season_theme';
+    private const FOLDER_BRIDE = 'bride';
+    private const FOLDER_GROOM = 'groom';
+    private const FOLDER_BRIDE_EDITED = 'bride_edited';
+    private const FOLDER_GROOM_EDITED = 'groom_edited';
+    private const FOLDER_SEASON = 'season_theme';
 
     protected SkinToneService $skinToneService;
 
@@ -56,58 +56,39 @@ class AIWeddingController extends Controller
             // 3️⃣ Send to Gemini (SkinToneService)
             $result = $this->skinToneService->analyzeSkinTone($brideBase64, $groomBase64, $request->season);
 
-            Log::info('AI Wedding Suggestion: Gemini Result Structure', [
-                'bride_keys' => array_keys($result['bride'] ?? []),
-                'groom_keys' => array_keys($result['groom'] ?? []),
-                'season_keys' => array_keys($result['season'] ?? []),
-            ]);
-
-            // 4️⃣ Optional Edited Images Save (with base64 prefix handling)
+            // 4️⃣ Optional Edited Images Save
             $brideEditedPath = $this->saveBase64Image($result['bride']['edited_image'] ?? null, self::FOLDER_BRIDE_EDITED);
             $groomEditedPath = $this->saveBase64Image($result['groom']['edited_image'] ?? null, self::FOLDER_GROOM_EDITED);
             $seasonThemePath = $this->saveBase64Image($result['season']['image'] ?? null, self::FOLDER_SEASON);
 
-            // 5️⃣ Save to Database (Aligned with Service Output)
+            // 5️⃣ Save to Database
             $suggestion = AISuggestion::create([
-                'user_id' => auth()->id(), // Assume authenticated user, add if not
                 'bride_image' => $bridePath,
                 'groom_image' => $groomPath,
                 'bride_edited_image' => $brideEditedPath,
                 'groom_edited_image' => $groomEditedPath,
                 'season_theme_image' => $seasonThemePath,
-                'bride_skin_tone' => $result['bride']['skin_tone'] ?? 'Default bride skin tone',
-                'bride_color_code' => json_encode($result['bride']['palette'] ?? []),
+                'bride_skin_tone' => $result['bride']['skin_tone'] ?? null,
+                'bride_color_code' => json_encode($result['bride']['color_code'] ?? []),
                 'bride_matching_colors' => json_encode($result['bride']['matching_colors'] ?? []),
-                'groom_skin_tone' => $result['groom']['skin_tone'] ?? 'Default groom skin tone',
-                'groom_color_code' => json_encode($result['groom']['palette'] ?? []),
+                'groom_skin_tone' => $result['groom']['skin_tone'] ?? null,
+                'groom_color_code' => json_encode($result['groom']['color_code'] ?? []),
                 'groom_matching_colors' => json_encode($result['groom']['matching_colors'] ?? []),
-                'season_name' => $request->season,
-                'season_palette' => json_encode($result['season']['palette'] ?? $this->getDefaultSeasonPalette($request->season)),
-                'season_description' => $result['season']['theme'] ?? 'Default ' . ucfirst($request->season) . ' wedding theme',
+                'season_name' => $result['season']['name'] ?? $request->season,
+                'season_palette' => json_encode($result['season']['palette'] ?? []),
+                'season_description' => $result['season']['description'] ?? '',
             ]);
-
-            // Load relations if defined in model (e.g., user relationship)
-            if (method_exists($suggestion, 'user')) {
-                $suggestion->load('user');
-            }
-
-            $result = $this->skinToneService->analyzeSkinTone($brideBase64, $groomBase64, $request->season);
-            $paletteSections = $this->skinToneService->generatePaletteSections($result, $request->season);
 
             return response()->json([
                 'success' => true,
                 'message' => '🎉 Wedding style analysis completed successfully',
                 'data' => $suggestion,
-                'palette_sections' => $paletteSections, // Add this for UI
             ]);
         } catch (\Exception $e) {
-            Log::error('AI Wedding Suggestion Error', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('AI Wedding Suggestion Error', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Analysis service is temporarily unavailable. Please try again later. (' . $e->getMessage() . ')',
+                'message' => 'Analysis service is temporarily unavailable. Please try again later.'
             ], 500);
         }
     }
@@ -121,14 +102,12 @@ class AIWeddingController extends Controller
             $results = $this->skinToneService->testImageGeneration();
             return response()->json([
                 'success' => true,
-                'models' => $results,
-                'api_key_set' => !empty(env('GEMINI_API_KEY')),
+                'models' => $results
             ]);
         } catch (\Exception $e) {
-            Log::error('Model Test Error', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -139,61 +118,40 @@ class AIWeddingController extends Controller
 
     private function uploadFile($file, string $folder): string
     {
-        $fileName = time() . '_' . Str::random(8) . '_' . $file->getClientOriginalName();
-        $directory = public_path($folder);
+        $fileName = time() . "_" . Str::random(8) . "_{$folder}." . $file->getClientOriginalExtension();
+        $directory = public_path("uploads/{$folder}");
 
         if (!file_exists($directory)) {
             mkdir($directory, 0755, true);
         }
 
         $file->move($directory, $fileName);
-        return $folder . '/' . $fileName; // Relative path for DB
+        return "uploads/{$folder}/{$fileName}";
     }
 
     private function saveBase64Image(?string $base64, string $folder): ?string
     {
-        if (!$base64) {
-            Log::info('No base64 image to save', ['folder' => $folder]);
-            return null;
-        }
+        if (!$base64) return null;
 
-        // Handle base64 prefix if exists (data:image/...;base64,)
+        // Remove base64 header if exists
         if (strpos($base64, 'data:image') === 0) {
             $base64 = preg_replace('#^data:image/\w+;base64,#i', '', $base64);
         }
 
-        $fileName = time() . '_' . Str::random(12) . '.png'; // PNG for consistency
-        $filePath = $folder . '/' . $fileName;
-        $directory = public_path($folder);
+        $fileName = "{$folder}_" . Str::random(12) . ".png";
+        $filePath = "uploads/{$folder}/{$fileName}";
+        $directory = public_path("uploads/{$folder}");
 
         if (!file_exists($directory)) {
             mkdir($directory, 0755, true);
         }
 
         try {
-            $imageData = base64_decode($base64, true);
-            if ($imageData === false) {
-                Log::error('Invalid base64 image data', ['folder' => $folder]);
-                return null;
-            }
-            file_put_contents(public_path($filePath), $imageData);
-            Log::info('Base64 image saved successfully', ['path' => $filePath]);
+            file_put_contents(public_path($filePath), base64_decode($base64));
             return $filePath;
         } catch (\Exception $e) {
-            Log::error('Failed to save base64 image', ['folder' => $folder, 'error' => $e->getMessage()]);
+            Log::error("Failed to save base64 image", ['error' => $e->getMessage()]);
             return null;
         }
-    }
-
-    // ===================== Helper for Default Palette =====================
-    private function getDefaultSeasonPalette(string $season): array
-    {
-        $palettes = [
-            'summer' => ['#87CEEB', '#98FB98', '#F0E68C'],
-            'winter' => ['#E0F6FF', '#B0E0E6', '#F0F8FF'],
-            'autumn' => ['#D2691E', '#CD853F', '#F4A460'],
-            'spring' => ['#FFB6C1', '#98FB98', '#FFE4E1'],
-        ];
-        return $palettes[strtolower($season)] ?? ['#FFFFFF', '#F5F5F5', '#E0E0E0'];
     }
 }

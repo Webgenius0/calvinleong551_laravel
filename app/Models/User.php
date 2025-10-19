@@ -83,7 +83,10 @@ class User extends Authenticatable implements JWTSubject
         ];
     }
 
-
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
     public function getAvatarAttribute($value): string | null
     {
         if (filter_var($value, FILTER_VALIDATE_URL)) {

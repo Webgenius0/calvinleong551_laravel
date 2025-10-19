@@ -49,6 +49,12 @@ return [
     'stripe' => [
     'client_id' => env('STRIPE_CLIENT_ID'),
     'redirect'  => env('STRIPE_REDIRECT_URI'),
+
+    'ai' => [
+        'gemini_api_key' => env('GEMINI_API_KEY'),
+        'gemini_base_url' => env('GEMINI_BASE_URL'),
+        'gemini_timeout' => env('GEMINI_TIMEOUT', 120),
+    ],
 ],
 
 

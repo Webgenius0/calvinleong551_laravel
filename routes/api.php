@@ -13,7 +13,7 @@ use App\Http\Controllers\Api\FirebaseTokenController;
 use App\Http\Controllers\Api\Frontend\HomeController;
 use App\Http\Controllers\Api\Frontend\PageController;
 use App\Http\Controllers\Api\Frontend\PostController;
-use App\Http\Controllers\Api\Frontend\ImageController;
+use App\Http\Controllers\Api\Frontend\Image\ImageController;
 use App\Http\Controllers\Api\Auth\SocialLoginController;
 use App\Http\Controllers\Api\Frontend\categoryController;
 use App\Http\Controllers\Api\Frontend\SettingsController;
@@ -136,6 +136,10 @@ Route::get('/privacy-policy', [PrivecyPolicyController::class, 'index']);
 Route::get('dynamic/page', [PageController::class, 'index']);
 Route::get('dynamic/page/show/{slug}', [PageController::class, 'show']);
 Route::post('/subscribe',[SubscriberController::class,'subscribe']);
+
+
+
+Route::post('/generate-image', [ImageController::class, 'generate']);
 
 
 
