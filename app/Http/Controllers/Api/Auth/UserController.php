@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
+use Carbon\Carbon;
 use Stripe\Stripe;
 use Stripe\Account;
 use App\Models\User;
@@ -46,7 +47,7 @@ class UserController extends Controller
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
             'password' => 'nullable|string|min:6|confirmed',
             'phone' => 'nullable|string|max:20',
-            'dob' => 'nullable|date',
+            'dob' => 'nullable',
             'gender' => 'nullable|in:male,female,others,non_binary',
         ]);
 
@@ -56,13 +57,26 @@ class UserController extends Controller
             unset($validatedData['password']);
         }
 
+        // Convert DOB to MySQL compatible format
+        if (!empty($validatedData['dob'])) {
+            try {
+                $validatedData['dob'] = Carbon::createFromFormat('d-m-Y', $validatedData['dob'])->format('Y-m-d');
+            } catch (\Exception $e) {
+                return Helper::jsonResponse(false, 'Invalid date format for date of birth. Expected format: DD-MM-YYYY', 422);
+            }
+        }
+
         $user = auth('api')->user();
 
         if ($request->hasFile('avatar')) {
             if (!empty($user->avatar)) {
                 Helper::fileDelete(public_path($user->getRawOriginal('avatar')));
             }
-            $validatedData['avatar'] = Helper::fileUpload($request->file('avatar'), 'user/avatar', getFileName($request->file('avatar')));
+            $validatedData['avatar'] = Helper::fileUpload(
+                $request->file('avatar'),
+                'user/avatar',
+                getFileName($request->file('avatar'))
+            );
         } else {
             $validatedData['avatar'] = $user->avatar;
         }
@@ -70,6 +84,10 @@ class UserController extends Controller
         $user->update($validatedData);
 
         $data = User::select($this->select)->find($user->id);
+        if ($data && $data->dob) {
+            $data->dob = Carbon::parse($data->dob)->format('d-m-Y');
+        }
+
         return Helper::jsonResponse(true, 'Profile updated successfully', 200, $data);
     }
 
