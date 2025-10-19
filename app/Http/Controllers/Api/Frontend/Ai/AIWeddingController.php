@@ -46,6 +46,8 @@ class AIWeddingController extends Controller
                 'theme'           => $theme,
                 'skin_tone'       => $skinTone,
                 'suggestion_data' => $look,
+                'bride_image'      => $look['bride']['image_reference'] ?? null,
+                'groom_image'      => $look['groom']['image_reference'] ?? null
             ]);
 
             return response()->json([

@@ -35,7 +35,7 @@ class RegisterController extends Controller
             'last_name'  => 'required|string|max:100',
             'email'      => 'required|string|email|max:150|unique:users',
             'password'   => 'required|string|min:6|confirmed',          
-            'agree'      => 'required|in:true',
+            'agree'      => 'nullable|',
         ]);
         try {
             DB::beginTransaction();
