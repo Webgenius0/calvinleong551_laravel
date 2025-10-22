@@ -118,6 +118,8 @@ class ResetPasswordController extends Controller
                 
                 $user->password = Hash::make($newPassword);
                 $user->reset_password_token = null;
+                $user->otp = null;
+                $user->otp_expires_at = null;
                 $user->reset_password_token_expire_at = null;
 
                 $user->save();

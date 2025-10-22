@@ -29,5 +29,8 @@ class AISuggestion extends Model
 
     protected $casts = [
         'season_palette' => 'array',
+        'all_response' => 'array', // Auto decode JSON
     ];
+
+    
 }
