@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('a_i_suggestions', function (Blueprint $table) {
             $table->id();
-            $table->string('bride_image');    // bride image path
-            $table->string('groom_image');    // groom image path
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('bride_image')->nullable();    // bride image path
+            $table->string('groom_image')->nullable();    // groom image path
             $table->string('season_image')->nullable();    // season image path
             $table->string('bride_skin_tone')->nullable();
             $table->json('bride_color_code')->nullable();

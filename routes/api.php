@@ -51,6 +51,7 @@ Route::middleware(['auth:api'])->controller(ImageController::class)->prefix('aut
 // });
 Route::middleware(['auth:api'])->controller(AIWeddingController::class)->group(function () {
     Route::post('/wedding-suggestions', 'generateSuggestion');
+    Route::post('/wedding-plate', 'generateColorPalettes');
 });
 
 
@@ -140,6 +141,7 @@ Route::post('/subscribe',[SubscriberController::class,'subscribe']);
 
 
 Route::post('/generate-image', [ImageController::class, 'generate']);
+Route::post('/generate-plate', [ImageController::class, 'generateColorPalettes']);
 
 
 

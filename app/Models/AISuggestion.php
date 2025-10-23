@@ -11,26 +11,21 @@ class AISuggestion extends Model
 
     protected $guarded = ['id'];
 
-    // protected $fillable = [
-    //     'bride_image',
-    //     'groom_image',
-    //     'bride_skin_tone',
-    //     'bride_color_code',
-    //     'groom_skin_tone',
-    //     'groom_color_code',
-    //     'season_name',
-    //     'season_palette',
-    //     'season_description',
-    //     'season_image',
-    //     'groom_edited_image',
-    //     'bride_edited_image',
-    //     'season_theme_image',
-    // ];
-
     protected $casts = [
-        'season_palette' => 'array',
-        'all_response' => 'array', // Auto decode JSON
+        'bride_colors' => 'array',
+        'groom_colors' => 'array',
     ];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function colorThemes()
+    {
+        return $this->hasMany(ColorTheme::class);
+    }
+
+    public $timestamps = true;
     
 }

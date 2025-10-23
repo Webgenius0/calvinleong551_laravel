@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Frontend\Ai;
 
 use App\Models\AISuggestion;
+use App\Models\ColorTheme;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -11,13 +12,8 @@ use App\Services\SkinToneService;
 
 class AIWeddingController extends Controller
 {
-    /** 
-     * Folder paths for saving images
-     */
     private const FOLDER_BRIDE = 'bride';
     private const FOLDER_GROOM = 'groom';
-    private const FOLDER_BRIDE_EDITED = 'bride_edited';
-    private const FOLDER_GROOM_EDITED = 'groom_edited';
     private const FOLDER_SEASON = 'season_theme';
 
     protected SkinToneService $skinToneService;
@@ -39,78 +35,101 @@ class AIWeddingController extends Controller
         ]);
 
         try {
+            // Increase timeout for this request
+            set_time_limit(300); // 5 minutes
+            
+            Log::info('AI Wedding Suggestion: Starting Analysis', [
+                'season' => $request->season,
+                'user_id' => auth()->id()
+            ]);
+
             // 1️⃣ Upload original images
             $bridePath = $this->uploadFile($request->file('bride_image'), self::FOLDER_BRIDE);
             $groomPath = $this->uploadFile($request->file('groom_image'), self::FOLDER_GROOM);
 
-            Log::info('AI Wedding Suggestion: Starting Analysis', [
-                'season' => $request->season,
+            Log::info('Images uploaded successfully', [
                 'bride_path' => $bridePath,
                 'groom_path' => $groomPath
             ]);
 
-            // 2️⃣ Analyze skin tone & generate suggestions using Gemini 2.5 Flash
-            //    Also generate edited images using NanoBanna
+            // 2️⃣ Analyze skin tone & generate suggestions
             $result = $this->skinToneService->analyzeSkinTone(
-                public_path($bridePath), 
-                public_path($groomPath), 
+                public_path($bridePath),
+                public_path($groomPath),
                 $request->season
             );
 
-            // 3️⃣ Save edited images from NanoBanna
-            $brideEditedPath = $this->saveBase64Image($result['bride']['edited_image'] ?? null, self::FOLDER_BRIDE_EDITED);
-            $groomEditedPath = $this->saveBase64Image($result['groom']['edited_image'] ?? null, self::FOLDER_GROOM_EDITED);
-            $seasonThemePath = $this->saveBase64Image($result['season']['image'] ?? null, self::FOLDER_SEASON);
+            Log::info('Analysis completed', [
+                'bride_skin_tone' => $result['bride']['skin_tone'] ?? 'unknown',
+                'groom_skin_tone' => $result['groom']['skin_tone'] ?? 'unknown',
+                'palettes_count' => count($result['all_responses'] ?? [])
+            ]);
 
-            // 4️⃣ Save all data to database
+            // 3️⃣ Save main data to AISuggestion table
             $suggestion = AISuggestion::create([
+                'user_id' => auth()->id(),
                 'bride_image' => $bridePath,
                 'groom_image' => $groomPath,
-                'bride_edited_image' => $brideEditedPath,
-                'groom_edited_image' => $groomEditedPath,
-                'season_theme_image' => $seasonThemePath,
-                'bride_skin_tone' => $result['bride']['skin_tone'] ?? null,
+                'season_image' => null, // No season image for now
+                'bride_skin_tone' => $result['bride']['skin_tone'] ?? 'neutral',
                 'bride_color_code' => json_encode($result['bride']['color_code'] ?? []),
-                'bride_matching_colors' => json_encode($result['bride']['matching_colors'] ?? []),
-                'groom_skin_tone' => $result['groom']['skin_tone'] ?? null,
+                'groom_skin_tone' => $result['groom']['skin_tone'] ?? 'neutral',
                 'groom_color_code' => json_encode($result['groom']['color_code'] ?? []),
-                'groom_matching_colors' => json_encode($result['groom']['matching_colors'] ?? []),
                 'season_name' => $result['season']['name'] ?? $request->season,
                 'season_palette' => json_encode($result['season']['palette'] ?? []),
                 'season_description' => $result['season']['description'] ?? '',
-                'season_image' => $seasonThemePath,
+            ]);
+
+            Log::info('AISuggestion created', ['id' => $suggestion->id]);
+
+            // 4️⃣ Save color palettes to color_themes table
+            $colorThemes = [];
+            if (isset($result['all_responses']) && is_array($result['all_responses'])) {
+                foreach ($result['all_responses'] as $index => $palette) {
+                    $colorTheme = ColorTheme::create([
+                        'ai_suggestion_id' => $suggestion->id,
+                        'title' => $palette['title'] ?? 'Untitled Palette ' . ($index + 1),
+                        'description' => $palette['description'] ?? 'No description available',
+                        'color_codes' => json_encode($palette['colors'] ?? []),
+                        'images' => json_encode($palette['images'] ?? []),
+                    ]);
+                    $colorThemes[] = $colorTheme;
+                }
+                Log::info('Color themes created', ['count' => count($colorThemes)]);
+            } else {
+                Log::warning('No color palettes found in response');
+            }
+
+            // 5️⃣ Load the relationship for response
+            $suggestion->load('colorThemes');
+
+            Log::info('AI Wedding Suggestion: Completed Successfully', [
+                'ai_suggestion_id' => $suggestion->id,
+                'color_themes_count' => count($colorThemes)
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => '🎉 Wedding style analysis completed successfully',
-                'data' => $suggestion,
+                'data' => [
+                    'ai_suggestion' => $suggestion,
+                    'color_themes' => $colorThemes
+                ],
             ]);
 
         } catch (\Exception $e) {
-            Log::error('AI Wedding Suggestion Error', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Analysis service is temporarily unavailable. Please try again later.'
-            ], 500);
-        }
-    }
-
-    /**
-     * Test Gemini & NanoBanna models
-     */
-    public function testModels()
-    {
-        try {
-            $results = $this->skinToneService->testImageGeneration();
-            return response()->json([
-                'success' => true,
-                'models' => $results
+            Log::error('AI Wedding Suggestion Error', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => auth()->id()
             ]);
-        } catch (\Exception $e) {
+            
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage()
+                'message' => 'Analysis service is temporarily unavailable. Please try again later.',
+                'debug' => env('APP_DEBUG') ? $e->getMessage() : null
             ], 500);
         }
     }
@@ -126,24 +145,5 @@ class AIWeddingController extends Controller
         if (!file_exists($directory)) mkdir($directory, 0755, true);
         $file->move($directory, $fileName);
         return "uploads/{$folder}/{$fileName}";
-    }
-
-    private function saveBase64Image(?string $base64, string $folder): ?string
-    {
-        if (!$base64) return null;
-        if (strpos($base64, 'data:image') === 0) {
-            $base64 = preg_replace('#^data:image/\w+;base64,#i', '', $base64);
-        }
-        $fileName = "{$folder}_" . Str::random(12) . ".png";
-        $filePath = "uploads/{$folder}/{$fileName}";
-        $directory = public_path("uploads/{$folder}");
-        if (!file_exists($directory)) mkdir($directory, 0755, true);
-        try {
-            file_put_contents(public_path($filePath), base64_decode($base64));
-            return $filePath;
-        } catch (\Exception $e) {
-            Log::error("Failed to save base64 image", ['error' => $e->getMessage()]);
-            return null;
-        }
     }
 }
