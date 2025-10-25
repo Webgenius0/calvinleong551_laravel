@@ -29,8 +29,8 @@ class AIWeddingController extends Controller
     public function generateSuggestion(Request $request)
     {
         $request->validate([
-            'bride_image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
-            'groom_image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
+            'bride_image' => 'required|image',
+            'groom_image' => 'required|image',
             'season' => 'required|string|in:spring,summer,autumn,winter',
         ]);
 
