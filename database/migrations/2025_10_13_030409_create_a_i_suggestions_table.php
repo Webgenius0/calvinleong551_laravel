@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('season_name')->nullable();
             $table->json('season_palette')->nullable();  // store as array (json)
             $table->text('season_description')->nullable();
+            $table->json('combined_colors')->nullable();  // store as array (json)
             $table->timestamps();
         });
     }

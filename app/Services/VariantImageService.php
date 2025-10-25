@@ -29,7 +29,62 @@ class VariantImageService
      * Fetches color theme by ID, gets associated AI suggestion for images and season,
      * then generates 6 variant images based on the color codes.
      */
-    public function generateVariantImagesForTheme(int $colorThemeId): array
+    // public function generateVariantImagesForTheme(int $colorThemeId): array
+    // {
+    //     try {
+    //         Log::info('Generating variant images for color theme', ['color_theme_id' => $colorThemeId]);
+
+    //         // Fetch ColorTheme
+    //         $colorTheme = ColorTheme::findOrFail($colorThemeId);
+    //         $colors = json_decode($colorTheme->color_codes, true) ?? [];
+    //         if (empty($colors)) {
+    //             throw new Exception('No colors found in color theme');
+    //         }
+
+    //         // Fetch associated AISuggestion
+    //         $aiSuggestion = AISuggestion::findOrFail($colorTheme->ai_suggestion_id);
+    //         $season = strtolower($aiSuggestion->season_name);
+    //         $bridePath = public_path($aiSuggestion->bride_image);
+    //         $groomPath = public_path($aiSuggestion->groom_image);
+
+    //         if (!file_exists($bridePath) || !file_exists($groomPath)) {
+    //             throw new Exception('Bride or groom image not found');
+    //         }
+
+    //         // Generate 6 different images for this palette
+    //         $images = $this->generatePaletteImages($season, $colors, $bridePath, $groomPath, $colorThemeId);
+
+    //         // Update the color_theme with image paths as JSON
+    //         $colorTheme->images = json_encode($images);
+    //         $colorTheme->save();
+
+    //         Log::info('Variant images generated successfully and images field updated as JSON', [
+    //             'color_theme_id' => $colorThemeId,
+    //             'image_count' => count($images)
+    //         ]);
+
+    //         return [
+    //             'success' => true,
+    //             'message' => 'Variant images generated successfully',
+    //             'data' => [
+    //                 'color_theme_id' => $colorThemeId,
+    //                 'colors' => $colors,
+    //                 'season' => $season,
+    //                 'images' => $images  // Each image has 'url' for access
+    //             ]
+    //         ];
+    //     } catch (Exception $e) {
+    //         Log::error('Error generating variant images: ' . $e->getMessage(), [
+    //             'color_theme_id' => $colorThemeId
+    //         ]);
+    //         return [
+    //             'success' => false,
+    //             'message' => 'Failed to generate variant images',
+    //             'error' => $e->getMessage()
+    //         ];
+    //     }
+    // }
+public function generateVariantImagesForTheme(int $colorThemeId): array
     {
         try {
             Log::info('Generating variant images for color theme', ['color_theme_id' => $colorThemeId]);
@@ -68,11 +123,14 @@ class VariantImageService
                 'message' => 'Variant images generated successfully',
                 'data' => [
                     'color_theme_id' => $colorThemeId,
+                    'title' => $colorTheme->title,
+                    'description' => $colorTheme->description,
                     'colors' => $colors,
                     'season' => $season,
                     'images' => $images  // Each image has 'url' for access
                 ]
             ];
+
         } catch (Exception $e) {
             Log::error('Error generating variant images: ' . $e->getMessage(), [
                 'color_theme_id' => $colorThemeId
@@ -84,7 +142,6 @@ class VariantImageService
             ];
         }
     }
-
     /**
      * Generate 6 different types of images for a palette.
      */
@@ -97,6 +154,8 @@ class VariantImageService
 
         // 2. Groom individual season-based wedding image
         $images[] = $this->generateGroomIndividualImage($season, $colors, $groomPath, $themeId);
+        // 2. Bride individual season-based wedding image
+        $images[] = $this->generateBrideIndividualImage($season, $colors, $bridePath, $themeId);
 
         // 3. Groom with friends (4 persons)
         $images[] = $this->generateGroomFriendsImage($season, $colors, $groomPath, $themeId);
@@ -128,6 +187,21 @@ class VariantImageService
         return [
             'type' => 'couple_wedding',
             'description' => 'Bride and groom wedding portrait',
+            'url' => $imagePath
+        ];
+    }
+
+    private function generateBrideIndividualImage(string $season, array $colors, string $bridePath, int $themeId): array
+    {
+        $prompt = "Create a professional wedding portrait of a bride in {$season} season theme. She should be wearing a wedding dress that matches these colors: " . implode(', ', $colors) . ". The bride should look elegant and radiant, with appropriate background for {$season}. Photorealistic style with beautiful lighting.";
+
+        $imageData = $this->generateImageWithFace($prompt, $bridePath);
+        $folder = 'bride_individual_images';
+        $imagePath = $this->saveImageToPublic($imageData, "{$folder}/bride_individual_{$season}_{$themeId}");
+
+        return [
+            'type' => 'bride_individual',
+            'description' => 'Bride individual wedding portrait',
             'url' => $imagePath
         ];
     }
