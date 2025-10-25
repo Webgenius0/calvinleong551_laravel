@@ -130,6 +130,25 @@ class AIWeddingController extends Controller
             // 6️⃣ Load the relationship for response - avoid duplicate by not returning separate array
             $suggestion->load('colorThemes');
 
+            // Process response to decode JSON fields and generate base URLs
+            $processedSuggestion = $suggestion->toArray();
+            $processedSuggestion['bride_image'] = $suggestion->bride_image ? asset($suggestion->bride_image) : null;
+            $processedSuggestion['groom_image'] = $suggestion->groom_image ? asset($suggestion->groom_image) : null;
+            $processedSuggestion['season_image'] = $suggestion->season_image ? asset($suggestion->season_image) : null;
+            $processedSuggestion['bride_color_code'] = json_decode($suggestion->bride_color_code, true) ?? [];
+            $processedSuggestion['groom_color_code'] = json_decode($suggestion->groom_color_code, true) ?? [];
+            $processedSuggestion['season_palette'] = json_decode($suggestion->season_palette, true) ?? [];
+
+            // Process colorThemes
+            $processedColorThemes = collect($processedSuggestion['color_themes'])->map(function ($theme) {
+                $processedTheme = $theme;
+                $processedTheme['color_codes'] = json_decode($theme['color_codes'], true) ?? [];
+                unset($processedTheme['images']); // Remove images field
+                return $processedTheme;
+            })->toArray();
+
+            $processedSuggestion['color_themes'] = $processedColorThemes;
+
             Log::info('AI Wedding Suggestion: Completed Successfully', [
                 'ai_suggestion_id' => $suggestion->id,
                 'color_themes_count' => count($colorThemes)
@@ -139,7 +158,7 @@ class AIWeddingController extends Controller
                 'success' => true,
                 'message' => '🎉 Wedding style analysis completed successfully',
                 'data' => [
-                    'ai_suggestion' => $suggestion, // Includes loaded colorThemes
+                    'ai_suggestion' => $processedSuggestion, // Processed with base URLs and decoded arrays
                 ],
             ]);
 
