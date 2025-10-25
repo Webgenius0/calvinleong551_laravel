@@ -73,7 +73,7 @@ class AIWeddingController extends Controller
                 
                 if ($imageData !== false) {
                     $fileName = time() . "_" . Str::random(8) . "_season.png";
-                    $directory = public_path(self::FOLDER_SEASON);
+                    $directory = public_path('uploads/' . self::FOLDER_SEASON);
                     if (!file_exists($directory)) {
                         mkdir($directory, 0755, true);
                     }
