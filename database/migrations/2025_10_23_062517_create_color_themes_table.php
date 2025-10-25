@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('color_themes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('a_i_suggestion_id')->constrained('a_i_suggestions')->onDelete('cascade');
+            $table->foreignId('ai_suggestion_id')->constrained('a_i_suggestions')->onDelete('cascade');
             $table->string('title');
             $table->text('description');
             $table->json('color_codes');

@@ -23,7 +23,7 @@ class AISuggestion extends Model
 
     public function colorThemes()
     {
-        return $this->hasMany(ColorTheme::class);
+        return $this->hasMany(ColorTheme::class, 'ai_suggestion_id');
     }
 
     public $timestamps = true;

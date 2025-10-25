@@ -9,14 +9,7 @@ class ColorTheme extends Model
 {
    use HasFactory;
 
-    protected $fillable = [
-        'ai_suggestion_id',
-        'title',
-        'description',
-        'color_codes',
-        'images',
-        'a_i_suggestion_id',
-    ];
+    protected $guarded = ['id'];
 
     protected $casts = [
         'color_codes' => 'array',

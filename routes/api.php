@@ -13,12 +13,12 @@ use App\Http\Controllers\Api\FirebaseTokenController;
 use App\Http\Controllers\Api\Frontend\HomeController;
 use App\Http\Controllers\Api\Frontend\PageController;
 use App\Http\Controllers\Api\Frontend\PostController;
-use App\Http\Controllers\Api\Frontend\Image\ImageController;
 use App\Http\Controllers\Api\Auth\SocialLoginController;
-use App\Http\Controllers\Api\Frontend\categoryController;
+// use App\Http\Controllers\Api\Frontend\categoryController;
 use App\Http\Controllers\Api\Frontend\SettingsController;
 use App\Http\Controllers\Api\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\Frontend\SubscriberController;
+use App\Http\Controllers\Api\Frontend\Image\ImageController;
 use App\Http\Controllers\Api\Frontend\SocialLinksController;
 
 use App\Http\Controllers\Api\Frontend\SubcategoryController;
@@ -26,13 +26,14 @@ use App\Http\Controllers\Api\Frontend\Ai\AIWeddingController;
 use App\Http\Controllers\Api\Frontend\Footer\FooterController;
 use App\Http\Controllers\Api\Frontend\PrivecyPolicyController;
 use App\Http\Controllers\Api\Frontend\Blogs\BlogListController;
+use App\Http\Controllers\Api\Frontend\Ai\VariantImageController;
 use App\Http\Controllers\Api\Frontend\Contactus\ContactusController;
 use App\Http\Controllers\Api\Frontend\AiSuggestion\WeddingSuggestionController;
 
 //page
 Route::get('/page/home', [HomeController::class, 'index']);
 
-Route::get('/subcategory', [SubcategoryController::class, 'index']);
+// Route::get('/subcategory', [SubcategoryController::class, 'index']);
 
 Route::get('/social/links', [SocialLinksController::class, 'index']);
 Route::get('/settings', [SettingsController::class, 'index']);
@@ -52,6 +53,9 @@ Route::middleware(['auth:api'])->controller(ImageController::class)->prefix('aut
 Route::middleware(['auth:api'])->controller(AIWeddingController::class)->group(function () {
     Route::post('/wedding-suggestions', 'generateSuggestion');
     Route::post('/wedding-plate', 'generateColorPalettes');
+});
+Route::middleware(['auth:api'])->controller(VariantImageController::class)->group(function () {
+    Route::post('/color-theme', 'generateVariants');
 });
 
 

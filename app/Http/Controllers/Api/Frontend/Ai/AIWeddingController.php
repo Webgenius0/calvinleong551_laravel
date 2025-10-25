@@ -65,12 +65,39 @@ class AIWeddingController extends Controller
                 'palettes_count' => count($result['all_responses'] ?? [])
             ]);
 
-            // 3️⃣ Save main data to AISuggestion table
+            // 3️⃣ Save season image if available
+            $seasonImagePath = null;
+            if (isset($result['season']['image']) && $result['season']['image']) {
+                $base64Image = substr($result['season']['image'], strpos($result['season']['image'], ",") + 1);
+                $imageData = base64_decode($base64Image);
+                
+                if ($imageData !== false) {
+                    $fileName = time() . "_" . Str::random(8) . "_season.png";
+                    $directory = public_path(self::FOLDER_SEASON);
+                    if (!file_exists($directory)) {
+                        mkdir($directory, 0755, true);
+                    }
+                    $filePath = "{$directory}/{$fileName}";
+                    
+                    if (file_put_contents($filePath, $imageData)) {
+                        $seasonImagePath = "uploads/" . self::FOLDER_SEASON . "/{$fileName}";
+                        Log::info('Season image saved successfully', ['path' => $seasonImagePath]);
+                    } else {
+                        Log::error('Failed to save season image to file');
+                    }
+                } else {
+                    Log::error('Failed to decode season image base64');
+                }
+            } else {
+                Log::info('No season image available in analysis result');
+            }
+
+            // 4️⃣ Save main data to AISuggestion table
             $suggestion = AISuggestion::create([
                 'user_id' => auth()->id(),
                 'bride_image' => $bridePath,
                 'groom_image' => $groomPath,
-                'season_image' => null, // No season image for now
+                'season_image' => $seasonImagePath,
                 'bride_skin_tone' => $result['bride']['skin_tone'] ?? 'neutral',
                 'bride_color_code' => json_encode($result['bride']['color_code'] ?? []),
                 'groom_skin_tone' => $result['groom']['skin_tone'] ?? 'neutral',
@@ -80,9 +107,9 @@ class AIWeddingController extends Controller
                 'season_description' => $result['season']['description'] ?? '',
             ]);
 
-            Log::info('AISuggestion created', ['id' => $suggestion->id]);
+            Log::info('AISuggestion created', ['id' => $suggestion->id, 'season_image' => $seasonImagePath]);
 
-            // 4️⃣ Save color palettes to color_themes table
+            // 5️⃣ Save color palettes to color_themes table
             $colorThemes = [];
             if (isset($result['all_responses']) && is_array($result['all_responses'])) {
                 foreach ($result['all_responses'] as $index => $palette) {
@@ -100,7 +127,7 @@ class AIWeddingController extends Controller
                 Log::warning('No color palettes found in response');
             }
 
-            // 5️⃣ Load the relationship for response
+            // 6️⃣ Load the relationship for response - avoid duplicate by not returning separate array
             $suggestion->load('colorThemes');
 
             Log::info('AI Wedding Suggestion: Completed Successfully', [
@@ -112,8 +139,7 @@ class AIWeddingController extends Controller
                 'success' => true,
                 'message' => '🎉 Wedding style analysis completed successfully',
                 'data' => [
-                    'ai_suggestion' => $suggestion,
-                    'color_themes' => $colorThemes
+                    'ai_suggestion' => $suggestion, // Includes loaded colorThemes
                 ],
             ]);
 
@@ -128,8 +154,8 @@ class AIWeddingController extends Controller
             
             return response()->json([
                 'success' => false,
-                'message' => 'Analysis service is temporarily unavailable. Please try again later.',
-                'debug' => env('APP_DEBUG') ? $e->getMessage() : null
+                'message' => '❌ An error occurred during wedding style analysis. Please try again later.',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
