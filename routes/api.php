@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\Frontend\SubcategoryController;
 use App\Http\Controllers\Api\Frontend\Ai\AIWeddingController;
 use App\Http\Controllers\Api\Frontend\Footer\FooterController;
 use App\Http\Controllers\Api\Frontend\PrivecyPolicyController;
+use App\Http\Controllers\Api\Frontend\Ai\ApiResponseController;
 use App\Http\Controllers\Api\Frontend\Blogs\BlogListController;
 use App\Http\Controllers\Api\Frontend\Ai\VariantImageController;
 use App\Http\Controllers\Api\Frontend\Contactus\ContactusController;
@@ -56,6 +57,9 @@ Route::middleware(['auth:api'])->controller(AIWeddingController::class)->group(f
 });
 Route::middleware(['auth:api'])->controller(VariantImageController::class)->group(function () {
     Route::post('/color-theme', 'generateVariants');
+});
+Route::middleware(['auth:api'])->controller(ApiResponseController::class)->group(function () {
+    Route::get('/ai-suggestions', 'getUserAISuggestions');
 });
 
 
