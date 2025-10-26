@@ -176,20 +176,19 @@ public function generateVariantImagesForTheme(int $colorThemeId): array
     /**
      * 1. Groom and bride wedding image
      */
-    private function generateCoupleWeddingImage(string $season, array $colors, string $bridePath, string $groomPath, int $themeId): array
-    {
-        $prompt = "Create a romantic wedding photo of a bride and groom in {$season} season theme. They should be standing together in elegant wedding attire that complements these colors: " . implode(', ', $colors) . ". The scene should be photorealistic with soft lighting and romantic atmosphere. Focus on their joyful expressions and connection.";
+   private function generateCoupleWeddingImage(string $season, array $colors, string $bridePath, string $groomPath, int $themeId): array
+{
+    $imagePrompt = "Create a romantic wedding photo of a bride and groom in {$season} season theme. They should be standing together in elegant wedding attire that complements these colors: " . implode(', ', $colors) . ". The scene should be photorealistic with soft lighting and romantic atmosphere. Focus on their joyful expressions and connection.";
 
-        $imageData = $this->generateImageWithFaces($prompt, $bridePath, $groomPath);
-        $folder = 'couple_wedding_images';
-        $imagePath = $this->saveImageToPublic($imageData, "{$folder}/couple_wedding_{$season}_{$themeId}");
-
-        return [
-            'type' => 'couple_wedding',
-            'description' => 'Bride and groom wedding portrait',
-            'url' => $imagePath
-        ];
-    }
+    $imageData = $this->generateImageWithFaces($imagePrompt, $bridePath, $groomPath);
+    $folder = 'couple_wedding_images';
+    $imagePath = $this->saveImageToPublic($imageData, "{$folder}/couple_wedding_{$season}_{$themeId}");
+    return [
+        'type' => 'couple_wedding',
+        'title' => 'Bride Groom Together',
+        'url' => $imagePath
+    ];
+}
 
     private function generateBrideIndividualImage(string $season, array $colors, string $bridePath, int $themeId): array
     {
@@ -201,7 +200,7 @@ public function generateVariantImagesForTheme(int $colorThemeId): array
 
         return [
             'type' => 'bride_individual',
-            'description' => 'Bride individual wedding portrait',
+            'title' => 'Bride Individual Portrait',
             'url' => $imagePath
         ];
     }
@@ -219,7 +218,7 @@ public function generateVariantImagesForTheme(int $colorThemeId): array
 
         return [
             'type' => 'groom_individual',
-            'description' => 'Groom individual wedding portrait',
+            'title' => 'Groom Individual Portrait',
             'url' => $imagePath
         ];
     }
@@ -237,7 +236,7 @@ public function generateVariantImagesForTheme(int $colorThemeId): array
 
         return [
             'type' => 'groom_friends',
-            'description' => 'Groom with 3 friends',
+            'title' => 'Groom with Friends',
             'url' => $imagePath
         ];
     }
@@ -256,7 +255,7 @@ public function generateVariantImagesForTheme(int $colorThemeId): array
 
         return [
             'type' => 'bride_friends',
-            'description' => 'Bride with 3 friends',
+            'title' => 'Bride with Friends',
             'url' => $imagePath
         ];
     }
@@ -292,7 +291,7 @@ public function generateVariantImagesForTheme(int $colorThemeId): array
 
         return [
             'type' => 'convention_hall',
-            'description' => 'Beautiful convention hall with wedding decorations matching color palette',
+            'title' => 'Convention Hall Decoration',
             'url' => $imagePath,
             'color_codes' => $colors
         ];
@@ -311,10 +310,45 @@ public function generateVariantImagesForTheme(int $colorThemeId): array
 
         return [
             'type' => 'group_friends',
-            'description' => 'Bride, groom and 4 friends',
+            'title' => 'Event Preview with Friends',
             'url' => $imagePath
         ];
     }
+    /**
+     * Generate AI text using Gemini model.
+     */
+    // private function generateText(string $prompt): string
+    // {
+    //     try {
+    //         $contents = [
+    //             [
+    //                 'parts' => [
+    //                     ['text' => $prompt]
+    //                 ]
+    //             ]
+    //         ];
+
+    //         $response = Http::timeout(self::TIMEOUT)
+    //             ->post("{$this->baseUrl}/models/{$this->suggestionModel}:generateContent?key={$this->apiKey}", [
+    //                 'contents' => $contents,
+    //                 'generationConfig' => [
+    //                     'temperature' => 0.7,
+    //                     'maxOutputTokens' => 200,
+    //                 ]
+    //             ]);
+
+    //         if ($response->successful()) {
+    //             $data = $response->json();
+    //             if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+    //                 return trim($data['candidates'][0]['content']['parts'][0]['text']);
+    //             }
+    //         }
+    //     } catch (\Exception $e) {
+    //         Log::error('Text generation failed: ' . $e->getMessage());
+    //     }
+
+    //     return 'A romantic and elegant wedding scene captured in photorealistic detail, highlighting the beauty of the season and the chosen color palette.';
+    // }
 
     /**
      * Generate image with bride and groom faces.

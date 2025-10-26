@@ -60,6 +60,8 @@ Route::middleware(['auth:api'])->controller(VariantImageController::class)->grou
 });
 Route::middleware(['auth:api'])->controller(ApiResponseController::class)->group(function () {
     Route::get('/ai-suggestions', 'getUserAISuggestions');
+
+    Route::get('/suggestions-details/{id}', 'getAISuggestionDetails');
 });
 
 

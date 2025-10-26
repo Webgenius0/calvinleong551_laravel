@@ -37,6 +37,9 @@ class AISuggestion extends Model
         'season_theme_image_url',
         'bride_edited_image_url',
         'groom_edited_image_url',
+        'bride_color_code' => 'array',
+        'groom_color_code' => 'array',
+        'season_palette' => 'array',
     ];
 
     // 👰 Bride image full URL

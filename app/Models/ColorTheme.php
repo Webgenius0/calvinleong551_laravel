@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Support\Facades\URL;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Storage;
 
 class ColorTheme extends Model
 {
@@ -14,37 +14,51 @@ class ColorTheme extends Model
 
     protected $casts = [
         'color_codes' => 'array',
-        'images' => 'array',
     ];
 
-    // Either remove this line or keep it only if you use the method below
-    protected $appends = ['formatted_images'];
+    // Remove formatted_images from appends
+    // protected $appends = ['formatted_images'];
 
     public function aiSuggestion()
     {
         return $this->belongsTo(AISuggestion::class);
     }
 
+    /**
+     * Get the images attribute as an array.
+     */
     public function getImagesAttribute($value)
     {
-        $images = is_array($value) ? $value : json_decode($value, true);
+        $data = $this->parseImagesData($value);
 
-        if (!is_array($images)) {
+        // Normalize URLs
+        return collect($data)->map(function ($img) {
+            if (is_array($img) && isset($img['url']) && !str_starts_with($img['url'], 'http')) {
+                $img['url'] = url($img['url']);
+            }
+            return $img;
+        })->toArray();
+    }
+
+    private function parseImagesData($value)
+    {
+        if (is_null($value)) {
             return [];
         }
 
-        foreach ($images as &$img) {
-            if (isset($img['url']) && !str_starts_with($img['url'], 'http')) {
-                $img['url'] = url($img['url']);
+        $data = $value;
+
+        if (is_string($data)) {
+            while (is_string($data)) {
+                $decoded = json_decode($data, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $data = $decoded;
+                } else {
+                    break;
+                }
             }
         }
 
-        return $images;
-    }
-
-    // ✅ Add this to fix the error
-    public function getFormattedImagesAttribute()
-    {
-        return $this->images;
+        return is_array($data) ? $data : [];
     }
 }
