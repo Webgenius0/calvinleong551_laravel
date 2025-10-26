@@ -27,7 +27,7 @@ class ApiResponseController extends Controller
                 return [
                     'id' => $suggestion->id,
                     'user_id' => $suggestion->user_id,
-                    
+                    'combined_colors' => $this->parseJsonField($suggestion->combined_colors),
                     'bride_skin_tone' => $suggestion->bride_skin_tone,
                     'bride_color_code' => $this->parseJsonField($suggestion->bride_color_code),
                     'groom_skin_tone' => $suggestion->groom_skin_tone,

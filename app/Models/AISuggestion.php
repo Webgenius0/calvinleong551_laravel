@@ -13,8 +13,10 @@ class AISuggestion extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'bride_colors' => 'array',
-        'groom_colors' => 'array',
+        'bride_color_code' => 'array',
+        'groom_color_code' => 'array',
+        'season_palette' => 'array',
+        'combined_colors' => 'array',
     ];
 
     public function user()
@@ -37,9 +39,7 @@ class AISuggestion extends Model
         'season_theme_image_url',
         'bride_edited_image_url',
         'groom_edited_image_url',
-        'bride_color_code' => 'array',
-        'groom_color_code' => 'array',
-        'season_palette' => 'array',
+        // Removed color code appends - casts handle inclusion as arrays in toArray()
     ];
 
     // 👰 Bride image full URL
@@ -77,5 +77,5 @@ class AISuggestion extends Model
         return $this->groom_edited_image ? URL::to($this->groom_edited_image) : null;
     }
 
-  
+    
 }
