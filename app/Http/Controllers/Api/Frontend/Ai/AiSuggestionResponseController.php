@@ -78,29 +78,21 @@ class AiSuggestionResponseController extends Controller
             ], 404);
         }
 
-        // Map each color theme
         $colorThemes = $aiSuggestion->colorThemes->map(function ($theme) {
-            $images = is_string($theme->images)
-                ? json_decode($theme->images, true)
-                : $theme->images;
+            // Parse color codes if stored as JSON
+            $colorCodes = is_string($theme->color_codes)
+                ? json_decode($theme->color_codes, true)
+                : $theme->color_codes;
 
-            $outfit_generate = !empty($images);
-
-            $data = [
+            return [
                 'id' => $theme->id,
                 'title' => $theme->title,
                 'description' => $theme->description,
-                'outfit_generate' => $outfit_generate,
+                'outfit_generate' => !empty($colorCodes), // keep true if there are color codes
+                'color_codes' => $colorCodes,
                 'created_at' => $theme->created_at,
                 'updated_at' => $theme->updated_at,
             ];
-
-            // Only add images field if outfit_generate is true
-            if ($outfit_generate) {
-                $data['images'] = $images;
-            }
-
-            return $data;
         });
 
         return response()->json([
@@ -109,6 +101,8 @@ class AiSuggestionResponseController extends Controller
             'data' => $colorThemes,
         ], 200);
     }
+
+
 
     // suggestion history
 
@@ -160,50 +154,54 @@ class AiSuggestionResponseController extends Controller
     //     ], 200);
     // }
 
-  public function suggestionHistory()
-{
-    $userId = auth()->guard('api')->id();
-    if (!$userId) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Unauthorized'
-        ], 401);
-    }
+    public function suggestionHistory()
+    {
+        $userId = auth()->guard('api')->id();
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
 
-    $colorThemes = ColorTheme::whereHas('aiSuggestion', function ($query) use ($userId) {
+        $colorThemes = ColorTheme::whereHas('aiSuggestion', function ($query) use ($userId) {
             $query->where('user_id', $userId);
         })
-        ->get()
-        ->filter(function ($theme) {
-            $images = is_string($theme->images)
-                ? json_decode($theme->images, true)
-                : $theme->images;
-            return !empty($images); // only include themes with images
-        })
-        ->map(function ($theme) {
-            return [
-                'id' => $theme->id,
-                'title' => $theme->title,
-                'description' => $theme->description,
-                'color_codes' => is_string($theme->color_codes)
-                    ? json_decode($theme->color_codes, true)
-                    : $theme->color_codes,
-            ];
-        })
-        ->values(); // 🔑 reindex array
+            ->get()
+            ->filter(function ($theme) {
+                $images = is_string($theme->images)
+                    ? json_decode($theme->images, true)
+                    : $theme->images;
+                return !empty($images); // only include themes with images
+            })
+            ->map(function ($theme) {
+                return [
+                    'id' => $theme->id,
+                    'title' => $theme->title,
+                    'description' => $theme->description,
+                    'color_codes' => is_string($theme->color_codes)
+                        ? json_decode($theme->color_codes, true)
+                        : $theme->color_codes,
+                ];
+            })
+            ->values(); // 🔑 reindex array
 
-    if ($colorThemes->isEmpty()) {
+        if ($colorThemes->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No color themes found with generated images.'
+            ], 404);
+        }
+
         return response()->json([
-            'success' => false,
-            'message' => 'No color themes found with generated images.'
-        ], 404);
+            'success' => true,
+            'message' => 'Color themes retrieved successfully.',
+            'data' => $colorThemes
+        ], 200);
     }
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Color themes retrieved successfully.',
-        'data' => $colorThemes
-    ], 200);
-}
+    // 
+
+    
 
 }
