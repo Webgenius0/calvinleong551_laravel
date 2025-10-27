@@ -228,7 +228,7 @@ class ApiResponseController extends Controller
     // details
 
 
- public function getAISuggestionDetails($id)
+public function getAISuggestionDetails($id)
 {
     $userId = auth()->id();
     if (!$userId) {
@@ -238,28 +238,29 @@ class ApiResponseController extends Controller
         ], 401);
     }
 
-    $colorThemes = ColorTheme::where('id', $id)->get();
-    if ($colorThemes->isEmpty()) {
+    $theme = ColorTheme::find($id);
+
+    if (!$theme) {
         return response()->json([
             'status' => false,
-            'message' => 'No color themes found for the given suggestion ID.',
+            'message' => 'No color theme found for the given ID.',
         ], 404);
     }
+
     return response()->json([
         'status' => true,
-        'message' => 'Color themes fetched successfully.',
-        'data' => $colorThemes->map(function ($theme) {
-            return [
-                'id' => $theme->id,
-                'ai_suggestion_id' => $theme->ai_suggestion_id,
-                'title' => $theme->title,
-                'description' => $theme->description,
-                'color_codes' => $this->parseJsonField($theme->color_codes),
-                'images' => $this->parseImagesField($theme->getRawOriginal('images')),
-            ];
-        }),
+        'message' => 'Color theme fetched successfully.',
+        'data' => [
+            'id' => $theme->id,
+            'ai_suggestion_id' => $theme->ai_suggestion_id,
+            'title' => $theme->title,
+            'description' => $theme->description,
+            'color_codes' => $this->parseJsonField($theme->color_codes),
+            'images' => $this->parseImagesField($theme->getRawOriginal('images')),
+        ],
     ], 200);
 }
+
 
 
 }
