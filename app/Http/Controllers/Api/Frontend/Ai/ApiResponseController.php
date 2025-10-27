@@ -44,11 +44,16 @@ class ApiResponseController extends Controller
                             'ai_suggestion_id' => $theme->ai_suggestion_id,
                             'title' => $theme->title,
                             'description' => $theme->description,
-                            'color_codes' => $this->parseJsonField($theme->color_codes),
-                            'images' => $this->parseImagesField($theme->getRawOriginal('images')),
+                            'color_codes' => $this->parseJsonField($theme->color_codes),                          
                             'created_at' => $theme->created_at,
                             'updated_at' => $theme->updated_at,
                         ];
+                        $images = $this->parseImagesField($theme->getRawOriginal('images'));
+                    if (!empty($images)) {
+                        $themeData['images'] = $images;
+                    }
+
+                    return $themeData;
                     })
                 ];
             });

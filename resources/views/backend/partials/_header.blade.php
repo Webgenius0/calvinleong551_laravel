@@ -8,15 +8,7 @@
                 <img src="{{ asset(settings()->logo ?? 'default/logo.svg') }}" class="header-brand-img desktop-logo" alt="logo">
                 <img src="{{ asset(settings()->logo ?? 'default/logo.svg') }}" class="header-brand-img light-logo1" alt="logo">
             </a>
-            <!-- LOGO -->
-            <div class="main-header-center ms-3">
-                <button onclick="location.href=`{{ route('admin.optimize') }}`">
-                    <i class="fas fa-sync fs-5"></i>
-                </button>
-                <button onclick="location.href=`{{ env('APP_URL') }}`">
-                    <i class="fa-solid fa-globe fs-5"></i>
-                </button>
-            </div>
+            <!-- LOGO -->    
             <div class="d-flex order-lg-2 ms-auto header-right-icons">
                 <div class="dropdown d-xl-none d-md-block d-none">
                     <a href="#" class="nav-link icon" data-bs-toggle="dropdown">
