@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\Frontend\Ai\ApiResponseController;
 use App\Http\Controllers\Api\Frontend\Blogs\BlogListController;
 use App\Http\Controllers\Api\Frontend\Ai\VariantImageController;
 use App\Http\Controllers\Api\Frontend\Contactus\ContactusController;
+use App\Http\Controllers\Api\Frontend\Ai\AiSuggestionResponseController;
 use App\Http\Controllers\Api\Frontend\AiSuggestion\WeddingSuggestionController;
 
 //page
@@ -62,6 +63,11 @@ Route::middleware(['auth:api'])->controller(ApiResponseController::class)->group
     Route::get('/ai-suggestions', 'getUserAISuggestions');
 
     Route::get('/suggestions-details/{id}', 'getAISuggestionDetails');
+});
+Route::middleware(['auth:api'])->controller(AiSuggestionResponseController::class)->group(function () {
+    Route::get('/all-suggestions', 'getAllSuggestions');
+    Route::get('/related-colortheme/{id}', 'relatedColorthemes');
+    Route::get('/suggestion-history', 'suggestionHistory');
 });
 
 
