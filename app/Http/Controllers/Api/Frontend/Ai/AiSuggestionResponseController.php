@@ -161,41 +161,40 @@ class AiSuggestionResponseController extends Controller
     // }
 
     public function suggestionHistory()
-{
-    $userId = auth()->guard('api')->id();
-    if (!$userId) {
+    {
+        $userId = auth()->guard('api')->id();
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+        $colorThemes = ColorTheme::whereHas('aiSuggestion', function ($query) use ($userId) {
+            $query->where('user_id', $userId);
+        })
+            ->get()
+            ->map(function ($theme) {
+                return [
+                    'id' => $theme->id,
+                    'title' => $theme->title,
+                    'description' => $theme->description,
+                    'color_codes' => is_string($theme->color_codes)
+                        ? json_decode($theme->color_codes, true)
+                        : $theme->color_codes,
+                ];
+            });
+
+        if ($colorThemes->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No color themes found with generated images.'
+            ], 404);
+        }
+
         return response()->json([
-            'success' => false,
-            'message' => 'Unauthorized'
-        ], 401);
+            'success' => true,
+            'message' => 'Color themes retrieved successfully.',
+            'data' => $colorThemes
+        ], 200);
     }
-
-    // Get all color themes where:
-    // 1. Related AI suggestion belongs to this user
-    // 2. images is not empty
-    $colorThemes = ColorTheme::whereHas('aiSuggestion', function ($query) use ($userId) {
-        $query->where('user_id', $userId);
-    })
-    ->get()
-    ->filter(function ($theme) {
-        $images = is_string($theme->images)
-            ? json_decode($theme->images, true)
-            : $theme->images;
-        return !empty($images);
-    });
-
-    if ($colorThemes->isEmpty()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No color themes found with generated images.'
-        ], 404);
-    }
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Color themes retrieved successfully.',
-        'data' => AisuggestionResource::collection($colorThemes)
-    ], 200);
-}
-
 }
