@@ -68,6 +68,7 @@ Route::middleware(['auth:api'])->controller(AiSuggestionResponseController::clas
     Route::get('/all-suggestions', 'getAllSuggestions');
     Route::get('/related-colortheme/{id}', 'relatedColorthemes');
     Route::get('/suggestion-history', 'suggestionHistory');
+    Route::get('/suggestion-response/{id}', 'response');
 });
 
 

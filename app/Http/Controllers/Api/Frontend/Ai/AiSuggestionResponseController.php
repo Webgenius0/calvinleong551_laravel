@@ -202,6 +202,56 @@ class AiSuggestionResponseController extends Controller
 
     // 
 
-    
+    public function response($id)
+{
+    $userId = auth()->guard('api')->id();
+    if (!$userId) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized'
+        ], 401);
+    }
+
+    $theme = AISuggestion::where('id', $id)->where('user_id', $userId)->first();
+
+    if (!$theme) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Color theme not found.'
+        ], 404);
+    }
+
+    // Prepare cleaned data
+    $data = [
+        'id' => $theme->id,
+        'bride_skin_tone' => $theme->bride_skin_tone ?? null,
+        'bride_image_url' => $theme->bride_image_url ?? null,
+        'bride_color_code' => $theme->bride_color_code ? json_decode($theme->bride_color_code, true) : [],
+        'groom_skin_tone' => $theme->groom_skin_tone ?? null,
+        'groom_image_url' => $theme->groom_image_url ?? null,
+        'groom_color_code' => $theme->groom_color_code ? json_decode($theme->groom_color_code, true) : [],
+        'season_name' => $theme->season_name ?? null,
+        'season_image_url' => $theme->season_image_url ?? null,
+        'season_description' => $theme->season_description ?? null,
+        'season_palette' => $theme->season_palette ? json_decode($theme->season_palette, true) : [],
+        'combined_colors' => $theme->combined_colors ? json_decode($theme->combined_colors, true) : [],
+    ];
+
+    // Remove null image fields
+    $data = array_filter($data, function($value, $key) {
+        if (str_ends_with($key, '_image_url')) {
+            return !empty($value);
+        }
+        return true;
+    }, ARRAY_FILTER_USE_BOTH);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Color theme retrieved successfully.',
+        'data' => $data
+    ], 200);
+}
+
+
 
 }
