@@ -84,11 +84,15 @@ class AiSuggestionResponseController extends Controller
                 ? json_decode($theme->color_codes, true)
                 : $theme->color_codes;
 
+                $colorImages = is_string($theme->images)
+                ? json_decode($theme->images, true)
+                : $theme->images;
+
             return [
                 'id' => $theme->id,
                 'title' => $theme->title,
                 'description' => $theme->description,
-                'outfit_generate' => !empty($colorCodes), // keep true if there are color codes
+                'outfit_generate' => !empty($colorImages), // keep true if there are color images
                 'color_codes' => $colorCodes,
                 'created_at' => $theme->created_at,
                 'updated_at' => $theme->updated_at,
@@ -220,7 +224,6 @@ class AiSuggestionResponseController extends Controller
             'message' => 'Color theme not found.'
         ], 404);
     }
-
     // Prepare cleaned data
     $data = [
         'id' => $theme->id,
@@ -251,7 +254,5 @@ class AiSuggestionResponseController extends Controller
         'data' => $data
     ], 200);
 }
-
-
 
 }
