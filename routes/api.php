@@ -69,6 +69,11 @@ Route::middleware(['auth:api'])->controller(AiSuggestionResponseController::clas
     Route::get('/related-colortheme/{id}', 'relatedColorthemes');
     Route::get('/suggestion-history', 'suggestionHistory');
     Route::get('/suggestion-response/{id}', 'response');
+
+    // Favourite routes
+    Route::post('/add-favourite', 'addFavouriteColorTheme');
+    Route::get('/favourites', 'getFavouriteColorThemes');
+    Route::delete('/remove-favourite/{id}', 'removeFavouriteColorTheme');
 });
 
 

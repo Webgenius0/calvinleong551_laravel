@@ -13,7 +13,7 @@ class ApiResponseController extends Controller
     public function getUserAISuggestions()
     {
         try {
-            $userId = auth()->id();
+            $userId = auth()->guard('api')->id();
 
             $suggestions = AISuggestion::with(['colorThemes' => function($query) {
                 $query->select('id', 'ai_suggestion_id', 'title', 'description', 'color_codes', 'images', 'created_at', 'updated_at');
@@ -230,7 +230,7 @@ class ApiResponseController extends Controller
 
 public function getAISuggestionDetails($id)
 {
-    $userId = auth()->id();
+    $userId = auth()->guard('api')->id();
     if (!$userId) {
         return response()->json([
             'status' => false,
