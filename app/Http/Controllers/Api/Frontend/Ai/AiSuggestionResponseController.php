@@ -57,55 +57,62 @@ class AiSuggestionResponseController extends Controller
     }
 
     // Get details of a specific AI suggestion including its color themes
-    public function relatedColorthemes($id)
-    {
-        $userId = auth()->guard('api')->id();
-        if (!$userId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 401);
-        }
-
-        $aiSuggestion = AISuggestion::with('colorThemes')
-            ->where('id', $id)
-            ->where('user_id', $userId)
-            ->first();
-
-        if (!$aiSuggestion) {
-            return response()->json([
-                'success' => false,
-                'message' => 'AI suggestion not found.'
-            ], 404);
-        }
-
-        $colorThemes = $aiSuggestion->colorThemes->map(function ($theme) {
-            // Parse color codes if stored as JSON
-            $colorCodes = is_string($theme->color_codes)
-                ? json_decode($theme->color_codes, true)
-                : $theme->color_codes;
-
-            $colorImages = is_string($theme->images)
-                ? json_decode($theme->images, true)
-                : $theme->images;
-
-            return [
-                'id' => $theme->id,
-                'title' => $theme->title,
-                'description' => $theme->description,
-                'outfit_generate' => !empty($colorImages), // keep true if there are color images
-                'color_codes' => $colorCodes,
-                'created_at' => $theme->created_at,
-                'updated_at' => $theme->updated_at,
-            ];
-        });
-
+   public function relatedColorthemes($id)
+{
+    $userId = auth()->guard('api')->id();
+    if (!$userId) {
         return response()->json([
-            'success' => true,
-            'message' => 'Color themes retrieved successfully.',
-            'data' => $colorThemes,
-        ], 200);
+            'success' => false,
+            'message' => 'Unauthorized'
+        ], 401);
     }
+
+    $aiSuggestion = AISuggestion::with('colorThemes')
+        ->where('id', $id)
+        ->where('user_id', $userId)
+        ->first();
+
+    if (!$aiSuggestion) {
+        return response()->json([
+            'success' => false,
+            'message' => 'AI suggestion not found.'
+        ], 404);
+    }
+
+    // Step 1: Get all favourite color_theme_ids for this user
+    $favouriteIds = Favourite::where('user_id', $userId)
+        ->pluck('color_theme_id')
+        ->toArray();
+
+    // Step 2: Build the response with extra flags
+    $colorThemes = $aiSuggestion->colorThemes->map(function ($theme) use ($favouriteIds) {
+        $colorCodes = is_string($theme->color_codes)
+            ? json_decode($theme->color_codes, true)
+            : $theme->color_codes;
+
+        $colorImages = is_string($theme->images)
+            ? json_decode($theme->images, true)
+            : $theme->images;
+
+        return [
+            'id' => $theme->id,
+            'title' => $theme->title,
+            'description' => $theme->description,
+            'outfit_generate' => !empty($colorImages),
+            'is_favourite' => in_array($theme->id, $favouriteIds), // 👈 check favourite
+            'color_codes' => $colorCodes,
+            'created_at' => $theme->created_at,
+            'updated_at' => $theme->updated_at,
+        ];
+    });
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Color themes retrieved successfully.',
+        'data' => $colorThemes,
+    ], 200);
+}
+
 
 
 
@@ -332,6 +339,7 @@ class AiSuggestionResponseController extends Controller
                 'color_codes' => is_string($theme->color_codes)
                     ? json_decode($theme->color_codes, true)
                     : $theme->color_codes,
+                'outfit_generate' => !empty($theme->images),
             ];
         });
 
