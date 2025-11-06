@@ -44,26 +44,6 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="title" class="form-label">Title:</label>
-                                        <input type="text" class="form-control @error('title') is-invalid @enderror"
-                                            name="title" placeholder="Title" id="title"
-                                            value="{{ $setting->title ?? old('title') ?? '' }}">
-                                        @error('title')
-                                        <span class="text-danger">{{ $message }}</span>
-                                        @enderror
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label for="description" class="form-label">Description:</label>
-                                        <textarea class="form-control @error('description') is-invalid @enderror"
-                                            name="description" placeholder="Description" id="description">{{ $setting->description ?? old('description') ?? '' }}</textarea>
-                                        @error('description')
-                                        <span class="text-danger">{{ $message }}</span>
-                                        @enderror
-                                    </div>
-                                 
-                                    
-                                    <div class="form-group">
                                         <label for="author" class="form-label">Author:</label>
                                         <input type="text" class="form-control @error('author') is-invalid @enderror"
                                             name="author" placeholder="Author" id="author"
@@ -113,32 +93,6 @@
                                         @enderror
                                     </div>
 
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="thumbnail" class="form-label">Thumbnail:</label>
-                                                <input type="file" class="dropify form-control @error('thumbnail') is-invalid @enderror"
-                                                    data-default-file="{{ !empty($setting->thumbnail) && file_exists(public_path($setting->thumbnail)) ? asset($setting->thumbnail) : asset('default/logo.png') }}"
-                                                    name="thumbnail" id="thumbnail">
-                                                    <p class="textTransform">Image Size Less than 5MB and Image Type must be jpeg,jpg,png.</p>
-                                                @error('favicon')
-                                                <span class="text-danger">{{ $message }}</span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="favicon" class="form-label">Favicon:</label>
-                                                <input type="file" class="dropify form-control @error('favicon') is-invalid @enderror"
-                                                    data-default-file="{{ !empty($setting->favicon) && file_exists(public_path($setting->favicon)) ? asset($setting->favicon) : asset('default/logo.png') }}"
-                                                    name="favicon" id="favicon">
-                                                    <p class="textTransform">Image Size Less than 5MB and Image Type must be jpeg,jpg,png.</p>
-                                                @error('favicon')
-                                                <span class="text-danger">{{ $message }}</span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                    </div>
 
                                     <div class="form-group">
                                         <button class="submit btn btn-primary" type="submit">Update</button>

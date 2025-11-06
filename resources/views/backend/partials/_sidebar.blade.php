@@ -47,18 +47,18 @@
                     <h3>CMS</h3>
                 </li>
                
-                <li class="slide">
+                {{-- <li class="slide">
                     <a class="side-menu__item {{  request()->routeIs('admin.social.*') ? 'has-link active' : '' }}" href="{{ route('admin.social.index') }}">
                         <i class="fa-solid fa-link side-menu__icon"></i>
                         <span class="side-menu__label">Social Link</span>
                     </a>
-                </li>
-                <li class="slide">
+                </li> --}}
+                {{-- <li class="slide">
                     <a class="side-menu__item {{  request()->routeIs('admin.faq.*') ? 'has-link active' : '' }}" href="{{ route('admin.faq.index') }}">
                         <i class="fa-solid fa-clipboard-question side-menu__icon"></i>
                         <span class="side-menu__label">FAQ</span>
                     </a>
-                </li>
+                </li> --}}
 
 
 
@@ -79,7 +79,7 @@
                         <li><a href="{{ route('admin.setting.logo.index') }}" class="slide-item">Logo Settings</a></li>
                         <li><a href="{{ route('admin.setting.profile.index') }}" class="slide-item">Profile Settings</a></li>
                         <li><a href="{{ route('admin.setting.mail.index') }}" class="slide-item">Mail Settings</a></li>
-                        <li><a href="{{ route('admin.setting.stripe.index') }}" class="slide-item">Stripe Settings</a></li>
+                        {{-- <li><a href="{{ route('admin.setting.stripe.index') }}" class="slide-item">Stripe Settings</a></li> --}}
                         <li><a href="{{ route('admin.setting.firebase.index') }}" class="slide-item">Firebase Settings</a></li>
                        
                     </ul>

@@ -82,7 +82,7 @@ class RegisterController extends Controller
 
             $data = User::select($this->select)->find($user->id);
 
-            // Mail::to($user->email)->send(new OtpMail($user->otp, $user, 'Verify Your Email Address'));
+            Mail::to($user->email)->send(new OtpMail($user->otp, $user, 'Verify Your Email Address'));
 
             DB::commit();
 
@@ -169,7 +169,7 @@ class RegisterController extends Controller
             $user->save();
 
             //* Send the new OTP to the user's email
-            // Mail::to($user->email)->send(new OtpMail($newOtp, $user, 'Verify Your Email Address'));
+            Mail::to($user->email)->send(new OtpMail($newOtp, $user, 'Verify Your Email Address'));
 
             return Helper::jsonResponse(true, 'A new OTP has been sent to your email.', 200);
         } catch (Exception $e) {

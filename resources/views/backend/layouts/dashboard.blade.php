@@ -25,7 +25,7 @@
 
             <!-- ROW-1 -->
             <div class="row">
-                <div class="col-lg-6 col-sm-12 col-md-6 col-xl-3">
+                <div class="col-lg-6 col-sm-12 col-md-6 col-xl-4">
                     <div class="card overflow-hidden">
                         <div class="card-body">
                             <div class="row">
@@ -45,13 +45,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6 col-sm-12 col-md-6 col-xl-3">
+                <div class="col-lg-6 col-sm-12 col-md-6 col-xl-4">
                     <div class="card overflow-hidden">
                         <div class="card-body">
                             <div class="row">
                                 <div class="col">
-                                    <h3 class="mb-2 fw-semibold">"25"</h3>
-                                    <p class="text-muted fs-13 mb-0">Total Post</p>
+                                    <h3 class="mb-2 fw-semibold">{{ DB::table('a_i_suggestions')->count() ?? 0 }}</h3>
+                                    <p class="text-muted fs-13 mb-0">Total Ai Suggestions</p>
                                 </div>
                                 <div class="col col-auto top-icn dash">
                                     <div
@@ -65,13 +65,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6 col-sm-12 col-md-6 col-xl-3">
+                <div class="col-lg-6 col-sm-12 col-md-6 col-xl-4">
                     <div class="card overflow-hidden">
                         <div class="card-body">
                             <div class="row">
                                 <div class="col">
-                                    <h3 class="mb-2 fw-semibold">"30"</h3>
-                                    <p class="text-muted fs-13 mb-0">Total Category</p>
+                                    <h3 class="mb-2 fw-semibold">{{ DB::table('favourites')->count() ?? 0 }}</h3>
+                                    <p class="text-muted fs-13 mb-0">Total Favourite</p>
                                 </div>
                                 <div class="col col-auto top-icn dash">
                                     <div class="counter-icon bg-info dash ms-auto box-shadow-info">
@@ -85,27 +85,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6 col-sm-12 col-md-6 col-xl-3">
-                    <div class="card overflow-hidden">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col">
-                                    <h3 class="mb-2 fw-semibold">"20"</h3>
-                                    <p class="text-muted fs-13 mb-0">Total Sub Category</p>
-                                </div>
-                                <div class="col col-auto top-icn dash">
-                                    <div class="counter-icon bg-warning dash ms-auto box-shadow-warning">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="fill-white" enable-background="new 0 0 24 24" viewBox="0 0 16 16">
-                                            <path fill-rule="evenodd" d="M6 1h6v7a.5.5 0 0 1-.757.429L9 7.083 6.757 8.43A.5.5 0 0 1 6 8z" />
-                                            <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2" />
-                                            <path d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1z" />
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                
             </div>
             <!-- earning history -->
             <div id="chart">
