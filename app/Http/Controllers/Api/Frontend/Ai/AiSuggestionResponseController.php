@@ -391,6 +391,7 @@ class AiSuggestionResponseController extends Controller
                 'id' => $favourite->id,
                 'theme_id' => $theme->id,
                 'title' => $theme->title,
+                'is_favourite' =>true,
                 'description' => $theme->description,
                 'color_codes' => is_string($theme->color_codes)
                     ? json_decode($theme->color_codes, true)
