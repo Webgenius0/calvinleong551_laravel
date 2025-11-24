@@ -195,9 +195,7 @@ class AIWeddingController extends Controller
             'groom_color_code' => $this->ensureJson($result['groom']['color_code'] ?? []),
             'season_name' => $result['season']['name'] ?? $season,
             'season_palette' => $this->ensureJson($result['season']['palette'] ?? []),
-            'season_description' =>$result['season']['description']['description']
-                ?? $result['season']['description']
-                ?? '',
+            'season_description' => $result['season']['description'] ?? '',
         ]);
 
         Log::info('AISuggestion created', [
