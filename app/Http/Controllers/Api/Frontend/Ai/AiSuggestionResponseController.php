@@ -264,56 +264,112 @@ class AiSuggestionResponseController extends Controller
     }
 
     // favourite color theme function
+    // public function addFavouriteColorTheme(Request $request)
+    // {
+    //     $userId = auth()->guard('api')->id();
+    //     if($userId === null) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Unauthorized'
+    //         ], 401);
+    //     }
+
+    //     if (!$userId) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Unauthorized'
+    //         ], 401);
+    //     }
+
+    //     $request->validate([
+    //         'color_theme_id' => 'required|string',
+    //     ]);
+
+    //     $favouriteExists = Favourite::where('user_id', $userId)
+    //         ->where('color_theme_id', $request->color_theme_id)
+    //         ->exists();
+
+    //     if ($favouriteExists) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Color theme already added to favourites.'
+    //         ], 409);
+    //     }
+
+    //     $favourite = Favourite::create([
+    //         'user_id' => $userId,
+    //         'color_theme_id' => $request->color_theme_id,
+    //     ]);
+
+    //     $data=[
+    //         'id' => $favourite->id,
+    //         'user_id' => $favourite->user_id,
+    //         'color_theme_id' => $favourite->color_theme_id,
+    //     ];
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'code' => 200,
+    //         'message' => 'Color theme added to favourites successfully.',
+    //         'data' => $data,
+    //     ], 201);
+    // }
+
     public function addFavouriteColorTheme(Request $request)
-    {
-        $userId = auth()->guard('api')->id();
-        if($userId === null) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 401);
-        }
+{
+    $userId = auth()->guard('api')->id();
 
-        if (!$userId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 401);
-        }
+    if (!$userId) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized'
+        ], 401);
+    }
 
-        $request->validate([
-            'color_theme_id' => 'required|string',
-        ]);
+    $request->validate([
+        'color_theme_id' => 'required|string',
+    ]);
 
-        $favouriteExists = Favourite::where('user_id', $userId)
-            ->where('color_theme_id', $request->color_theme_id)
-            ->exists();
+    // Check if already favourited
+    $existingFavourite = Favourite::where('user_id', $userId)
+        ->where('color_theme_id', $request->color_theme_id)
+        ->first();
 
-        if ($favouriteExists) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Color theme already added to favourites.'
-            ], 409);
-        }
+    if ($existingFavourite) {
 
-        $favourite = Favourite::create([
-            'user_id' => $userId,
-            'color_theme_id' => $request->color_theme_id,
-        ]);
-
-        $data=[
-            'id' => $favourite->id,
-            'user_id' => $favourite->user_id,
-            'color_theme_id' => $favourite->color_theme_id,
-        ];
+        // Delete if exists (REMOVE favourite)
+        $existingFavourite->delete();
 
         return response()->json([
             'success' => true,
             'code' => 200,
-            'message' => 'Color theme added to favourites successfully.',
-            'data' => $data,
-        ], 201);
+            'message' => 'Color theme removed from favourites.',
+            'data' => [
+                'color_theme_id' => $request->color_theme_id,
+                'is_favourite' => false
+            ]
+        ], 200);
     }
+
+    // Add new favourite
+    $favourite = Favourite::create([
+        'user_id' => $userId,
+        'color_theme_id' => $request->color_theme_id,
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'code' => 201,
+        'message' => 'Color theme added to favourites successfully.',
+        'data' => [
+            'id' => $favourite->id,
+            'user_id' => $favourite->user_id,
+            'color_theme_id' => $favourite->color_theme_id,
+            'is_favourite' => true
+        ],
+    ], 201);
+}
+
 
     // get favourite color themes
 
