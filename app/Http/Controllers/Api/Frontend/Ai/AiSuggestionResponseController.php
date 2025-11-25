@@ -51,12 +51,21 @@ class AiSuggestionResponseController extends Controller
                 $seasonDescription = '';
             }
 
+            $combinedColors = $suggestion->combined_colors;
+
+            if (is_string($combinedColors)) {
+                $decodedColors = json_decode($combinedColors, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decodedColors)) {
+                    $combinedColors = $decodedColors;
+                }
+            }
+
             return [
                 'id' => $suggestion->id,
                 'user_id' => $suggestion->user_id,
                 'season_name' => $suggestion->season_name,
                 'season_description' => $seasonDescription,
-                'combined_colors' => $suggestion->combined_colors ?? [],
+                'combined_colors' => $combinedColors,
                 'bride_image_url' => $suggestion->bride_image_url,
                 'groom_image_url' => $suggestion->groom_image_url,
                 'season_image_url' => $suggestion->season_image_url,
