@@ -24,6 +24,7 @@ Route::get('social-login/{provider}',[SocialLoginController::class,'RedirectToPr
 Route::get('social-login/{provider}/callback',[SocialLoginController::class, 'HandleProviderCallback']);
 
 Route::post('subscriber/store',[SubscriberController::class, 'store'])->name('subscriber.data.store');
+Route::get('privacy-policy',[SubscriberController::class, 'index'])->name('privacy_policy');
 
 Route::post('contact/store',[ContactController::class, 'store'])->name('contact.store');
 
