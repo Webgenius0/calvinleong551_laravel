@@ -1,6 +1,9 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Request;
 use App\Http\Controllers\Web\NotificationController;
 use App\Http\Controllers\Web\Frontend\HomeController;
 use App\Http\Controllers\Api\Auth\SocialLoginController;
@@ -25,6 +28,13 @@ Route::get('social-login/{provider}/callback',[SocialLoginController::class, 'Ha
 
 Route::post('subscriber/store',[SubscriberController::class, 'store'])->name('subscriber.data.store');
 Route::get('privacy-policy',[SubscriberController::class, 'index'])->name('privacy_policy');
+Route::get('sign-in',[SubscriberController::class, 'userLogin'])->name('sign-in');
+Route::get('user-profile',[SubscriberController::class, 'userProfile'])->name('user-profile');
+
+
+Route::post('login-submit',[SubscriberController::class, 'submitLogin'])->name('login.submit');
+Route::get('logout',[SubscriberController::class, 'Userlogout'])->name('logout');
+Route::get('delete-account',[SubscriberController::class, 'deleteAccount'])->name('delete.account');
 
 Route::post('contact/store',[ContactController::class, 'store'])->name('contact.store');
 

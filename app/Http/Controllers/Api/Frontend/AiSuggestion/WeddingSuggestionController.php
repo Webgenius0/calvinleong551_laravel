@@ -23,8 +23,8 @@ class WeddingSuggestionController extends Controller
     {
         // Validate request
         $validator = Validator::make($request->all(), [
-            'bride_photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'groom_photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'bride_photo' => 'required|image',
+            'groom_photo' => 'required|image',
             'season' => 'required|in:spring,summer,autumn,winter'
         ]);
 

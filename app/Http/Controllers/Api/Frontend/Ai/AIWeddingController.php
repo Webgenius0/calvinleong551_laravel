@@ -43,7 +43,7 @@ class AIWeddingController extends Controller
             
             Log::info('AI Wedding Suggestion: Starting Analysis', [
                 'season' => $request->season,
-                'user_id' => auth()->id()
+                'user_id' => auth('api')->id()
             ]);
 
             // 1️⃣ Upload original images
@@ -68,7 +68,7 @@ class AIWeddingController extends Controller
                 
                 Log::warning('Analysis failed', [
                     'error' => $result['error'] ?? 'Unknown error',
-                    'user_id' => auth()->id()
+                    'user_id' => auth('api')->id()
                 ]);
                 
                 return response()->json([
@@ -117,7 +117,7 @@ class AIWeddingController extends Controller
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
-                'user_id' => auth()->id()
+                'user_id' => auth('api')->id()
             ]);
             
             return response()->json([
@@ -184,7 +184,7 @@ class AIWeddingController extends Controller
 
         // Save main suggestion
         $suggestion = AISuggestion::create([
-            'user_id' => auth()->id(),
+            'user_id' => auth('api')->id(),
             'bride_image' => $bridePath,
             'groom_image' => $groomPath,
             'season_image' => $seasonImagePath,
