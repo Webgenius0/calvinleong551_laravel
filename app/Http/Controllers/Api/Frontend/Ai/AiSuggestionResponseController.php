@@ -51,6 +51,18 @@ class AiSuggestionResponseController extends Controller
                 $seasonDescription = '';
             }
 
+            // === ONLY THIS PART ADDED: Clean the plain text from escaped quotes ===
+            if (is_string($seasonDescription)) {
+                $seasonDescription = trim($seasonDescription);
+                // Remove surrounding quotes if present
+                if (str_starts_with($seasonDescription, '"') && str_ends_with($seasonDescription, '"')) {
+                    $seasonDescription = substr($seasonDescription, 1, -1);
+                }
+                // Remove escaped quotes like \"
+                $seasonDescription = stripslashes($seasonDescription);
+            }
+            // ====================================================
+
             $combinedColors = $suggestion->combined_colors;
 
             if (is_string($combinedColors)) {

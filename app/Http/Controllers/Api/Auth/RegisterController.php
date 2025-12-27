@@ -37,7 +37,7 @@ class RegisterController extends Controller
             'password'   => 'required|string|min:6|confirmed',          
             'agree'      => 'nullable|',
         ]);
-        try {
+       try{
             DB::beginTransaction();
             do {
                 $slug = "user_".rand(1000000000, 9999999999);
@@ -97,10 +97,10 @@ class RegisterController extends Controller
             ], 200);
             
         } catch (Exception $e) {
-            DB::rollBack();
-            return Helper::jsonErrorResponse('User registration failed', 500, [$e->getMessage()]);
+            return Helper::jsonErrorResponse($e->getMessage(), $e->getCode());
         }
-    }
+    } 
+    
     public function VerifyEmail(Request $request)
     {
         $request->validate([
