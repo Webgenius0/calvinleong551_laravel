@@ -40,7 +40,7 @@ class AIWeddingController extends Controller
         try {
             // Increase timeout for this request
             set_time_limit(300); // 5 minutes
-            
+
             Log::info('AI Wedding Suggestion: Starting Analysis', [
                 'season' => $request->season,
                 'user_id' => auth('api')->id()
@@ -65,12 +65,12 @@ class AIWeddingController extends Controller
             // 3️⃣ Check if analysis was successful
             if (!($result['success'] ?? false)) {
                 $this->cleanupFiles([$bridePath, $groomPath]);
-                
+
                 Log::warning('Analysis failed', [
                     'error' => $result['error'] ?? 'Unknown error',
                     'user_id' => auth('api')->id()
                 ]);
-                
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Analysis failed: ' . ($result['error'] ?? 'Please try again later.'),
@@ -84,17 +84,35 @@ class AIWeddingController extends Controller
                 'palettes_count' => count($result['all_responses'] ?? [])
             ]);
 
-            // 4️⃣ Save season image if available
+            // 4️⃣ Clean season description (and other text fields)
+            if (isset($result['season']['description'])) {
+                $result['season']['description'] = $this->cleanAiText($result['season']['description']);
+            }
+
+            // 5️⃣ Save season image if available
             $seasonImagePath = null;
             if (isset($result['season']['image']) && $result['season']['image']) {
                 $seasonImagePath = $this->saveSeasonImage($result['season']['image']);
                 Log::info('Season image saved', ['path' => $seasonImagePath]);
             }
 
-            // 5️⃣ Save to database
+            // 6️⃣ Clean color themes titles & descriptions
+            if (isset($result['all_responses']) && is_array($result['all_responses'])) {
+                foreach ($result['all_responses'] as &$theme) {
+                    if (isset($theme['title'])) {
+                        $theme['title'] = $this->cleanAiText($theme['title']);
+                    }
+                    if (isset($theme['description'])) {
+                        $theme['description'] = $this->cleanAiText($theme['description']);
+                    }
+                }
+                unset($theme); // break reference
+            }
+
+            // 7️⃣ Save to database (now with cleaned text)
             $suggestion = $this->saveToDatabase($result, $bridePath, $groomPath, $request->season, $seasonImagePath);
 
-            // 6️⃣ Process response for API
+            // 8️⃣ Process response for API
             $processedResponse = $this->processApiResponse($suggestion);
 
             Log::info('AI Wedding Suggestion: Completed Successfully', [
@@ -108,18 +126,17 @@ class AIWeddingController extends Controller
                     'ai_suggestion' => $processedResponse,
                 ],
             ]);
-
         } catch (\Exception $e) {
             // Clean up uploaded files on error
             $this->cleanupFiles([$bridePath, $groomPath]);
-            
+
             Log::error('AI Wedding Suggestion Error', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'user_id' => auth('api')->id()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => '❌ An error occurred during wedding style analysis. Please try again later.',
@@ -127,6 +144,51 @@ class AIWeddingController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Improved cleanAiText: Handles double-escaped quotes like "\"text\"" → "text"
+     * Strips outer quotes + unescapes inner escaped quotes properly
+     */
+    private function cleanAiText($text)
+    {
+        if (!is_string($text) || trim($text) === '') {
+            return $text;
+        }
+
+        $text = trim($text);
+
+        // Step 1: Try to decode JSON safely
+        $decoded = json_decode($text, true);
+
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            // If JSON contains description key, return it
+            if (isset($decoded['description'])) {
+                return trim($decoded['description']);
+            }
+
+            // Otherwise return first string value found
+            foreach ($decoded as $value) {
+                if (is_string($value)) {
+                    return trim($value);
+                }
+            }
+        }
+
+        // Step 2: Remove surrounding quotes
+        if (
+            (str_starts_with($text, '"') && str_ends_with($text, '"')) ||
+            (str_starts_with($text, "'") && str_ends_with($text, "'"))
+        ) {
+            $text = substr($text, 1, -1);
+        }
+
+        // Step 3: Unescape quotes and slashes
+        $text = stripslashes($text);
+
+        return trim($text);
+    }
+
+
 
     /**
      * Save season image from base64 data
