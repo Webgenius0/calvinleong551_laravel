@@ -34,6 +34,7 @@ use App\Http\Controllers\Web\Backend\Settings\ProfileController;
 use App\Http\Controllers\Web\Backend\Settings\SettingController;
 use App\Http\Controllers\Web\Backend\Access\PermissionController;
 use App\Http\Controllers\Web\Backend\Settings\FirebaseController;
+use App\Http\Controllers\Web\Backend\UserList\UserListController;
 use App\Http\Controllers\Web\Backend\Boosting\BoostPlanController;
 use App\Http\Controllers\Web\Backend\Settings\GoogleMapController;
 use App\Http\Controllers\Web\Backend\Settings\SignatureController;
@@ -140,9 +141,13 @@ Route::controller(OrderController::class)->prefix('order')->name('order.')->grou
     Route::get('/status/{id}', 'status')->name('status');
 });
 
-Route::controller(AdminRefundController::class)->prefix('admin-refund')->name('admin-refund.')->group(function () {
+
+Route::controller(UserListController::class)->prefix('userlist')->name('userlist.')->group(function () {
     Route::get('/', 'index')->name('index');
+    Route::get('/create', 'create')->name('create');
+    Route::post('/store', 'store')->name('store');
     Route::get('/show/{id}', 'show')->name('show');
+    Route::delete('/delete/{id}', 'destroy')->name('destroy');
     Route::get('/status/{id}', 'status')->name('status');
 });
 

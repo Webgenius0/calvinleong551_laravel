@@ -229,6 +229,119 @@
         .list-group-item.text-center {
             border: none !important;
         }
+
+        /* Year selector styling */
+        .year-selector {
+            min-width: 120px;
+        }
+
+        /* Legend styling */
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        /* Comparison controls */
+        .comparison-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .comparison-badge {
+            font-size: 11px;
+            padding: 2px 6px;
+            margin-left: 5px;
+        }
+
+        /* Year comparison pills */
+        .year-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .year-pill {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .year-pill:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .year-pill.active {
+            border-color: currentColor;
+            font-weight: 600;
+        }
+
+        .year-2024 {
+            background: rgba(155, 77, 255, 0.1);
+            color: #9a4dff;
+        }
+
+        .year-2025 {
+            background: rgba(91, 127, 255, 0.1);
+            color: #5b7fff;
+        }
+
+        .year-2026 {
+            background: rgba(52, 195, 143, 0.1);
+            color: #34c38f;
+        }
+
+        /* Chart header responsive */
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .chart-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .comparison-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .year-selector,
+            #chartPeriod {
+                flex: 1;
+            }
+        }
     </style>
 @endpush
 @section('content')
@@ -362,19 +475,82 @@
                     <!-- User Registration Chart -->
                     <div class="col-lg-8 col-md-12">
                         <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">User Registration Analytics</h3>
-                                <div class="ms-auto">
+                            <div class="card-header chart-header">
+                                <h3 class="card-title mb-0">User Registration Analytics</h3>
+                                <div class="comparison-controls">
+                                    <!-- Year Selector -->
+                                    <select class="form-control form-select year-selector" id="chartYear">
+                                        @php
+                                            $currentYear = date('Y');
+                                            $years = range($currentYear - 2, $currentYear);
+                                            rsort($years);
+                                        @endphp
+                                        @foreach ($years as $year)
+                                            <option value="{{ $year }}"
+                                                {{ $year == $currentYear ? 'selected' : '' }}>
+                                                {{ $year }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+
+                                    <!-- Period Selector -->
                                     <select class="form-control form-select" id="chartPeriod">
-                                        <option value="yearly">Yearly</option>
+                                        <option value="yearly">Yearly Overview</option>
                                         <option value="monthly">Monthly</option>
                                         <option value="weekly">Weekly</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="card-body">
+                                <!-- Year Selection Pills -->
+                                <div class="year-pills" id="yearPills">
+                                    <!-- Pills will be populated dynamically -->
+                                </div>
+
                                 <!-- Chart Container -->
                                 <div id="user-registration-chart" style="height: 350px;"></div>
+
+                                <!-- Chart Legend -->
+                                <div class="chart-legend" id="chartLegend"></div>
+
+                                <!-- Summary Stats -->
+                                <div class="row mt-3" id="chartSummary">
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card bg-light border-0 shadow-sm">
+                                            <div class="card-body p-3 text-center">
+                                                <h5 class="mb-1 fw-bold" id="selectedYearTotal">0</h5>
+                                                <small class="text-muted" id="selectedYearLabel">Current Year</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card bg-light border-0 shadow-sm">
+                                            <div class="card-body p-3 text-center">
+                                                <h5 class="mb-1 fw-bold" id="totalUsers">0</h5>
+                                                <small class="text-muted">All Time Total</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card bg-light border-0 shadow-sm">
+                                            <div class="card-body p-3 text-center">
+                                                <h5 class="mb-1 fw-bold" id="growthPercentage">
+                                                    0%
+                                                    <span class="badge bg-success comparison-badge">↑</span>
+                                                </h5>
+                                                <small class="text-muted">YoY Growth</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card bg-light border-0 shadow-sm">
+                                            <div class="card-body p-3 text-center">
+                                                <h5 class="mb-1 fw-bold" id="averageMonthly">0</h5>
+                                                <small class="text-muted">Avg Monthly</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -385,7 +561,10 @@
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h3 class="card-title mb-0">Recent Registrations</h3>
                                 <div>
-                                    <a href="" class="btn btn-sm btn-primary">View All</a>
+                                    <a href="{{ route('admin.userlist.index') }}" class="btn btn-sm btn-primary">
+                                        View All
+                                    </a>
+
                                 </div>
                             </div>
                             <div class="card-body p-0 position-relative">
@@ -552,53 +731,101 @@
             </div>
         </div>
     </div>
-      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.36.3/dist/apexcharts.min.js"></script>
 
     <script>
         $(document).ready(function() {
-            console.log('Document ready, initializing chart...');
+            console.log('Dashboard initialized');
 
-            // Initialize the chart
-            initChart('yearly');
+            // Available years (current year and previous 2 years)
+            const currentYear = {{ date('Y') }};
+            const availableYears = [currentYear, currentYear - 1, currentYear - 2];
+            const yearColors = {
+                [currentYear]: '#34c38f', // Green for current year
+                [currentYear - 1]: '#5b7fff', // Blue for previous year
+                [currentYear - 2]: '#9a4dff' // Purple for 2 years ago
+            };
+
+            // Initialize with current year and yearly overview
+            let selectedYear = currentYear;
+            let chartPeriod = $('#chartPeriod').val();
+            let selectedYears = [currentYear]; // Array of selected years for comparison
+
+            // Initialize chart
+            initChart();
+            initYearPills();
+
+            // Handle year change
+            $('#chartYear').change(function() {
+                selectedYear = parseInt($(this).val());
+                selectedYears = [selectedYear]; // Reset to single year selection
+                initChart();
+                initYearPills();
+            });
 
             // Handle period change
             $('#chartPeriod').change(function() {
-                console.log('Period changed to:', $(this).val());
-                initChart($(this).val());
+                chartPeriod = $(this).val();
+                initChart();
             });
 
-            function initChart(period) {
-                console.log('Initializing chart with period:', period);
+            function initChart() {
+                console.log('Initializing chart:', {
+                    selectedYear,
+                    chartPeriod,
+                    selectedYears
+                });
 
                 // Check if chart container exists
-                var chartElement = document.querySelector("#user-registration-chart");
+                const chartElement = document.querySelector("#user-registration-chart");
                 if (!chartElement) {
-                    console.error('Chart container #user-registration-chart not found!');
+                    console.error('Chart container not found!');
                     return;
                 }
 
                 // Destroy existing chart if any
                 if (window.userChart && typeof window.userChart.destroy === 'function') {
-                    console.log('Destroying existing chart');
                     window.userChart.destroy();
                 }
 
-                // Get data based on period
-                let chartData = getChartData(period);
-                console.log('Chart data:', chartData);
+                // Get data for selected years
+                const chartData = getChartData();
+                console.log('Chart data loaded:', chartData);
+
+                // Prepare series data
+                const seriesData = [];
+                const colors = [];
+
+                // Add data for each selected year
+                selectedYears.forEach(year => {
+                    if (chartData.years[year]) {
+                        seriesData.push({
+                            name: `${year}`,
+                            data: chartData.years[year].data
+                        });
+                        colors.push(yearColors[year] || '#5b7fff');
+                    }
+                });
 
                 // Chart options
-                var options = {
-                    series: [{
-                        name: 'New Users',
-                        data: chartData.data
-                    }],
+                const options = {
+                    series: seriesData,
                     chart: {
-                        type: 'area',
+                        type: chartPeriod === 'yearly' ? 'bar' : 'area',
                         height: 350,
                         toolbar: {
-                            show: true
+                            show: true,
+                            tools: {
+                                download: true,
+                                selection: true,
+                                zoom: true,
+                                zoomin: true,
+                                zoomout: true,
+                                pan: true,
+                                reset: true
+                            }
                         },
                         zoom: {
                             enabled: true
@@ -609,31 +836,31 @@
                             speed: 800
                         }
                     },
-                    colors: ['#5b7fff'],
+                    colors: colors,
                     dataLabels: {
                         enabled: false
                     },
                     stroke: {
                         curve: 'smooth',
-                        width: 3,
-                        colors: ['#5b7fff']
+                        width: selectedYears.length > 1 ? 2 : 3,
+                        colors: colors
                     },
                     fill: {
-                        type: 'gradient',
+                        type: chartPeriod === 'yearly' ? 'solid' : 'gradient',
                         gradient: {
                             shadeIntensity: 1,
-                            opacityFrom: 0.7,
-                            opacityTo: 0.2,
+                            opacityFrom: selectedYears.length > 1 ? 0.4 : 0.7,
+                            opacityTo: selectedYears.length > 1 ? 0.2 : 0.2,
                             stops: [0, 90, 100]
                         }
                     },
                     markers: {
-                        size: 5,
-                        colors: ['#5b7fff'],
+                        size: selectedYears.length > 1 ? 4 : 5,
+                        colors: colors,
                         strokeColors: '#fff',
                         strokeWidth: 2,
                         hover: {
-                            size: 7
+                            size: selectedYears.length > 1 ? 6 : 7
                         }
                     },
                     xaxis: {
@@ -641,6 +868,14 @@
                         labels: {
                             style: {
                                 colors: '#6b7280',
+                                fontSize: '12px'
+                            }
+                        },
+                        title: {
+                            text: chartPeriod === 'yearly' ? 'Months' : (chartPeriod === 'monthly' ? 'Weeks' :
+                                'Days'),
+                            style: {
+                                color: '#6b7280',
                                 fontSize: '12px'
                             }
                         }
@@ -676,44 +911,216 @@
                     },
                     tooltip: {
                         theme: 'light',
+                        shared: selectedYears.length > 1,
+                        intersect: false,
                         y: {
                             formatter: function(val) {
                                 return val + " users"
+                            }
+                        }
+                    },
+                    legend: {
+                        show: false // We'll use custom legend
+                    },
+                    plotOptions: {
+                        bar: {
+                            borderRadius: 4,
+                            columnWidth: selectedYears.length > 1 ? '60%' : '70%',
+                            distributed: false,
+                            dataLabels: {
+                                position: 'top'
                             }
                         }
                     }
                 };
 
                 try {
-                    console.log('Creating new chart instance...');
                     window.userChart = new ApexCharts(chartElement, options);
                     window.userChart.render();
                     console.log('Chart rendered successfully');
+
+                    // Update legend and summary
+                    updateChartLegend(seriesData, colors);
+                    updateChartSummary(chartData);
+
                 } catch (error) {
                     console.error('Error creating chart:', error);
                 }
             }
 
-            function getChartData(period) {
-                // Sample data - In production, fetch this from your API
-                var sampleData = {
-                    yearly: {
-                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct',
-                            'Nov', 'Dec'
-                        ],
-                        data: [65, 78, 66, 89, 92, 105, 120, 135, 148, 165, 182, 210]
-                    },
-                    monthly: {
-                        categories: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                        data: [45, 68, 72, 89]
-                    },
-                    weekly: {
-                        categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                        data: [25, 38, 42, 55, 68, 72, 85]
-                    }
-                };
+            function initYearPills() {
+                const pillsContainer = $('#yearPills');
+                let pillsHtml = '';
 
-                return sampleData[period] || sampleData.yearly;
+                availableYears.forEach(year => {
+                    const isActive = selectedYears.includes(year);
+                    pillsHtml += `
+                        <div class="year-pill year-${year} ${isActive ? 'active' : ''}" 
+                             data-year="${year}"
+                             style="background: ${isActive ? yearColors[year] + '20' : 'rgba(0,0,0,0.05)'}; 
+                                    color: ${yearColors[year]};
+                                    border-color: ${isActive ? yearColors[year] : 'transparent'}">
+                            <i class="fe fe-${isActive ? 'check-circle' : 'circle'} me-1"></i>
+                            ${year}
+                        </div>
+                    `;
+                });
+
+                // Add "Compare All" button
+                pillsHtml += `
+                    <div class="year-pill bg-light text-muted" id="compareAll">
+                        <i class="fe fe-git-compare me-1"></i>
+                        Compare All
+                    </div>
+                `;
+
+                pillsContainer.html(pillsHtml);
+
+                // Handle year pill clicks
+                $('.year-pill[data-year]').click(function() {
+                    const year = parseInt($(this).data('year'));
+
+                    // Toggle year selection
+                    if (selectedYears.includes(year)) {
+                        // Remove year if already selected (but keep at least one)
+                        if (selectedYears.length > 1) {
+                            selectedYears = selectedYears.filter(y => y !== year);
+                        }
+                    } else {
+                        // Add year if not selected
+                        selectedYears.push(year);
+                        selectedYears.sort((a, b) => b - a); // Sort descending (newest first)
+                    }
+
+                    // Update year selector
+                    $('#chartYear').val(selectedYears[0]);
+                    selectedYear = selectedYears[0];
+
+                    // Reinitialize
+                    initChart();
+                    initYearPills();
+                });
+
+                // Handle "Compare All" click
+                $('#compareAll').click(function() {
+                    selectedYears = [...availableYears]; // Select all years
+                    $('#chartYear').val(selectedYears[0]);
+                    selectedYear = selectedYears[0];
+                    initChart();
+                    initYearPills();
+                });
+            }
+
+            function getChartData() {
+                // This is sample data - Replace with actual API call
+                // In production, you would fetch this data from your backend
+
+                const yearsData = {};
+                const categories = chartPeriod === 'yearly' ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
+                        'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                    ] :
+                    chartPeriod === 'monthly' ? ['Week 1', 'Week 2', 'Week 3', 'Week 4'] : ['Mon', 'Tue', 'Wed',
+                        'Thu', 'Fri', 'Sat', 'Sun'
+                    ];
+
+                // Generate data for each available year
+                availableYears.forEach(year => {
+                    // Base values decrease for older years
+                    const baseValue = year === currentYear ? 150 :
+                        year === currentYear - 1 ? 100 :
+                        80; // Two years ago
+
+                    const data = [];
+
+                    categories.forEach((category, index) => {
+                        // Generate realistic data with growth trend
+                        let value = baseValue + (index * (chartPeriod === 'yearly' ? 15 : 10));
+
+                        // Add some randomness
+                        value += Math.floor(Math.random() * 30);
+
+                        // Add seasonal variation for yearly data
+                        if (chartPeriod === 'yearly') {
+                            // Higher values in middle and end of year
+                            if (index > 5) value += 20; // Higher in second half
+                            if (index === 11) value += 30; // Highest in December
+                        }
+
+                        // Ensure minimum value
+                        data.push(Math.max(10, value));
+                    });
+
+                    yearsData[year] = {
+                        data: data,
+                        total: data.reduce((a, b) => a + b, 0),
+                        average: Math.round(data.reduce((a, b) => a + b, 0) / data.length)
+                    };
+                });
+
+                return {
+                    categories: categories,
+                    years: yearsData,
+                    selectedYear: selectedYear,
+                    selectedYears: selectedYears
+                };
+            }
+
+            function updateChartLegend(seriesData, colors) {
+                const legendContainer = $('#chartLegend');
+                if (seriesData.length === 0) {
+                    legendContainer.hide();
+                    return;
+                }
+
+                let legendHtml = '';
+                seriesData.forEach((series, index) => {
+                    const color = colors[index] || '#5b7fff';
+                    const year = parseInt(series.name);
+                    const yearData = getChartData().years[year];
+
+                    legendHtml += `
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: ${color};"></span>
+                            <span class="legend-label fw-semibold" style="font-size: 12px;">
+                                ${series.name}:
+                                <span class="text-muted">${yearData?.total?.toLocaleString() || 0} users</span>
+                            </span>
+                        </div>
+                    `;
+                });
+
+                legendContainer.html(legendHtml).show();
+            }
+
+            function updateChartSummary(chartData) {
+                const selectedYearData = chartData.years[selectedYear];
+                const previousYearData = chartData.years[selectedYear - 1];
+
+                // Calculate growth percentage compared to previous year
+                let growthPercentage = 0;
+                let growthBadgeClass = 'bg-secondary';
+                let growthArrow = '';
+
+                if (previousYearData && previousYearData.total > 0) {
+                    growthPercentage = ((selectedYearData.total - previousYearData.total) / previousYearData.total *
+                        100).toFixed(1);
+                    growthBadgeClass = growthPercentage >= 0 ? 'bg-success' : 'bg-danger';
+                    growthArrow = growthPercentage >= 0 ? '↑' : '↓';
+                }
+
+                // Calculate total across all available years
+                const allTimeTotal = Object.values(chartData.years).reduce((sum, yearData) => sum + yearData.total,
+                    0);
+
+                // Update summary cards
+                $('#selectedYearLabel').text(`Year ${selectedYear}`);
+                $('#selectedYearTotal').text(selectedYearData.total.toLocaleString());
+                $('#totalUsers').text(allTimeTotal.toLocaleString());
+                $('#growthPercentage').html(`
+                    ${growthPercentage > 0 ? '+' : ''}${growthPercentage}%
+                    <span class="badge ${growthBadgeClass} comparison-badge">${growthArrow}</span>
+                `);
+                $('#averageMonthly').text(selectedYearData.average);
             }
 
             // Enhanced scroll functionality for Recent Registrations
@@ -867,4 +1274,3 @@
         });
     </script>
 @endsection
-
