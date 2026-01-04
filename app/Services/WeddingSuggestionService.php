@@ -34,10 +34,10 @@ class WeddingSuggestionService
 
             // 3️⃣ Generate professional groom and bride images with AI
             $professionalImages = $this->generateProfessionalImagesWithAI(
-                $bridePath, 
-                $groomPath, 
-                $season, 
-                $brideAnalysis, 
+                $bridePath,
+                $groomPath,
+                $season,
+                $brideAnalysis,
                 $groomAnalysis
             );
 
@@ -82,7 +82,6 @@ class WeddingSuggestionService
                     'wedding_palette_suggestions' => $weddingPaletteSuggestions
                 ]
             ];
-
         } catch (Exception $e) {
             if (isset($bridePath)) Helper::fileDelete(public_path($bridePath));
             if (isset($groomPath)) Helper::fileDelete(public_path($groomPath));
@@ -100,23 +99,25 @@ class WeddingSuggestionService
     private function generateProfessionalImagesWithAI($bridePath, $groomPath, $season, $brideAnalysis, $groomAnalysis)
     {
         // Generate enhanced groom image with professional styling
-        $groomPrompt = "Create a professional wedding portrait of this groom with:
+        $groomPrompt = "Create a professional individual wedding portrait of this groom standing elegantly with:
         - Original face features preserved
         - Professional wedding attire matching {$season} season
         - Colors that complement skin tone: {$groomAnalysis['skin_tone']}
         - Background matching {$season} theme
         - Enhanced but realistic appearance
+        - Confident and joyful pose, no physical contact with anyone
         - Wedding-appropriate styling";
 
         $enhancedGroom = $this->generateAIImage($groomPrompt, $groomPath);
 
         // Generate enhanced bride image with professional styling
-        $bridePrompt = "Create a professional wedding portrait of this bride with:
-        - Original face features preserved  
+        $bridePrompt = "Create a professional individual wedding portrait of this bride standing elegantly with:
+        - Original face features preserved
         - Professional wedding attire matching {$season} season
         - Colors that complement skin tone: {$brideAnalysis['skin_tone']}
         - Background matching {$season} theme
         - Enhanced but realistic appearance
+        - Graceful and joyful pose, no physical contact with anyone
         - Wedding-appropriate styling and makeup";
 
         $enhancedBride = $this->generateAIImage($bridePrompt, $bridePath);
@@ -152,7 +153,7 @@ class WeddingSuggestionService
         ]";
 
         $response = $this->callGeminiAPI($prompt);
-        
+
         if ($response) {
             $data = json_decode($response, true);
             if (json_last_error() === JSON_ERROR_NONE && count($data) === 4) {
@@ -170,7 +171,7 @@ class WeddingSuggestionService
     private function generateMultipleColorPalettesWithAI($brideSkinTone, $groomSkinTone, $season)
     {
         $palettes = [];
-        
+
         for ($i = 1; $i <= 3; $i++) {
             $prompt = "Create wedding color palette combination {$i} for {$season} that works for:
             - Bride skin tone: {$brideSkinTone}
@@ -186,7 +187,7 @@ class WeddingSuggestionService
             ]";
 
             $response = $this->callGeminiAPI($prompt);
-            
+
             if ($response) {
                 $data = json_decode($response, true);
                 if (json_last_error() === JSON_ERROR_NONE && count($data) === 4) {
@@ -194,7 +195,7 @@ class WeddingSuggestionService
                     continue;
                 }
             }
-            
+
             // Fallback to predefined palette if AI fails
             $palettes[] = $this->generateSinglePalette($brideSkinTone, $groomSkinTone, $season, $i);
         }
@@ -208,19 +209,19 @@ class WeddingSuggestionService
     private function generatePaletteSuggestionsWithAI($colorPalettes, $season, $bridePath, $groomPath, $brideAnalysis, $groomAnalysis)
     {
         $suggestions = [];
-        
+
         foreach ($colorPalettes as $i => $palette) {
             $paletteNumber = $i + 1;
-            
+
             // Generate AI descriptions for this palette
             $paletteInfo = $this->generatePaletteInfoWithAI($palette, $season, $paletteNumber);
-            
+
             // Generate AI images for this palette combination
             $combinationImages = $this->generateCombinationImagesWithAI(
-                $bridePath, 
-                $groomPath, 
-                $palette, 
-                $season, 
+                $bridePath,
+                $groomPath,
+                $palette,
+                $season,
                 $paletteNumber,
                 $brideAnalysis,
                 $groomAnalysis
@@ -255,35 +256,37 @@ class WeddingSuggestionService
         $colors = implode(', ', array_column($palette, 'color'));
 
         // 1. Couple image (bride and groom together)
-        $couplePrompt = "Create a realistic professional wedding couple photo:
-        - Bride and groom together in {$season} setting
+        $couplePrompt = "Create a realistic professional wedding couple portrait:
+        - Bride and groom standing side by side or nearby in {$season} setting, looking at each other or the camera with loving joyful expressions
+        - No hugging, kissing, embracing, or any physical contact
         - Using color palette: {$colors}
         - Bride skin tone: {$brideAnalysis['skin_tone']}
         - Groom skin tone: {$groomAnalysis['skin_tone']}
+        - Modest, elegant, and romantic poses with personal space
         - Professional wedding photography style
-        - Romantic and natural poses";
+        - Natural and joyful vibe";
 
         $coupleImage = $this->generateAIImage($couplePrompt);
 
         // 2. Groomsmen group image
         $groomsmenPrompt = "Create a realistic groomsmen group photo:
-        - Groom with 3-4 friends in wedding attire
-        - Using color palette: {$colors} 
+        - Groom with 3-4 friends standing together in wedding attire, no physical contact like arms around shoulders
+        - Using color palette: {$colors}
         - Groom's original face features
         - Friends with diverse appearances
         - {$season} background theme
-        - Professional group photography";
+        - Professional group photography, elegant and celebratory poses";
 
         $groomsmenImage = $this->generateAIImage($groomsmenPrompt, $groomPath);
 
         // 3. Bridesmaids group image  
         $bridesmaidsPrompt = "Create a realistic bridesmaids group photo:
-        - Bride with 3-4 friends in coordinated dresses
+        - Bride with 3-4 friends standing together in coordinated dresses, no physical contact like arms around each other
         - Using color palette: {$colors}
         - Bride's original face features
         - Friends with diverse appearances
         - {$season} background theme
-        - Professional group photography";
+        - Professional group photography, elegant and joyful poses";
 
         $bridesmaidsImage = $this->generateAIImage($bridesmaidsPrompt, $bridePath);
 
@@ -330,7 +333,7 @@ class WeddingSuggestionService
         }";
 
         $response = $this->callGeminiAPI($prompt, $imagePath);
-        
+
         if ($response) {
             $data = json_decode($response, true);
             if (json_last_error() === JSON_ERROR_NONE) {
@@ -358,7 +361,7 @@ class WeddingSuggestionService
         }";
 
         $response = $this->callGeminiAPI($prompt);
-        
+
         if ($response) {
             $data = json_decode($response, true);
             if (json_last_error() === JSON_ERROR_NONE) {
@@ -378,39 +381,39 @@ class WeddingSuggestionService
      * Generate AI image (placeholder - implement with your preferred AI image generation API)
      */
     private function generateAIImage($prompt, $referenceImagePath = null)
-{
-    $client = new \GuzzleHttp\Client();
-    $apiToken = env('REPLICATE_API_TOKEN');
+    {
+        $client = new \GuzzleHttp\Client();
+        $apiToken = env('REPLICATE_API_TOKEN');
 
-    $body = [
-        'version' => 'stability-ai/sdxl:latest',
-        'input' => ['prompt' => $prompt],
-    ];
+        $body = [
+            'version' => 'stability-ai/sdxl:latest',
+            'input' => ['prompt' => $prompt],
+        ];
 
-    if ($referenceImagePath && file_exists($referenceImagePath)) {
-        $body['input']['image'] = base64_encode(file_get_contents($referenceImagePath));
+        if ($referenceImagePath && file_exists($referenceImagePath)) {
+            $body['input']['image'] = base64_encode(file_get_contents($referenceImagePath));
+        }
+
+        $response = $client->post('https://api.replicate.com/v1/predictions', [
+            'headers' => [
+                'Authorization' => 'Token ' . $apiToken,
+                'Content-Type' => 'application/json'
+            ],
+            'json' => $body
+        ]);
+
+        $data = json_decode($response->getBody(), true);
+        $imageUrl = $data['output'][0] ?? null;
+
+        if ($imageUrl) {
+            $imageContents = file_get_contents($imageUrl);
+            $fileName = 'uploads/ai-generated/' . uniqid() . '.jpg';
+            file_put_contents(public_path($fileName), $imageContents);
+            return $fileName;
+        }
+
+        return null;
     }
-
-    $response = $client->post('https://api.replicate.com/v1/predictions', [
-        'headers' => [
-            'Authorization' => 'Token ' . $apiToken,
-            'Content-Type' => 'application/json'
-        ],
-        'json' => $body
-    ]);
-
-    $data = json_decode($response->getBody(), true);
-    $imageUrl = $data['output'][0] ?? null;
-
-    if ($imageUrl) {
-        $imageContents = file_get_contents($imageUrl);
-        $fileName = 'uploads/ai-generated/' . uniqid() . '.jpg';
-        file_put_contents(public_path($fileName), $imageContents);
-        return $fileName;
-    }
-
-    return null;
-}
 
 
     /**
@@ -432,7 +435,7 @@ class WeddingSuggestionService
             $url = "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=" . $this->apiKey;
 
             $parts = [['text' => $prompt]];
-            
+
             if ($imagePath && file_exists($imagePath)) {
                 $parts[] = [
                     'inline_data' => [
@@ -456,7 +459,6 @@ class WeddingSuggestionService
 
             $data = json_decode($response->getBody(), true);
             return $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
-
         } catch (Exception $e) {
             Log::error('Gemini API Error: ' . $e->getMessage());
             return null;
@@ -594,9 +596,9 @@ class WeddingSuggestionService
                     ['color' => '#87CEEB', 'name' => 'Sky Blue', 'usage' => 'Bridesmaids dresses'],
                     ['color' => '#FFFACD', 'name' => 'Lemon Cream', 'usage' => 'Table settings']
                 ],
-                // ... other palettes
+
             ],
-            // ... other seasons
+
         ];
     }
 }

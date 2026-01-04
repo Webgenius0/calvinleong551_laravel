@@ -23,12 +23,17 @@ class VariantImageController extends Controller
     {
         $request->validate([
             'color_theme_id' => 'required|integer|exists:color_themes,id',
+            'custom_colors' => 'sometimes|array',
+            'custom_colors.*' => 'sometimes|string|regex:/^#[A-Fa-f0-9]{6}$/',
         ]);
 
         try {
             set_time_limit(300); // 5 minutes for image generation
 
-            $result = $this->variantImageService->generateVariantImagesForTheme($request->color_theme_id);
+            $colorThemeId = $request->input('color_theme_id');
+            $customColors = $request->input('custom_colors', []);
+
+            $result = $this->variantImageService->generateVariantImagesForTheme( $colorThemeId, $customColors);
 
             if (!$result['success']) {
                 return response()->json([

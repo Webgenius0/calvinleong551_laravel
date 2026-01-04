@@ -84,19 +84,33 @@ class VariantImageService
     //         ];
     //     }
     // }
-public function generateVariantImagesForTheme(int $colorThemeId): array
+    public function generateVariantImagesForTheme(int $colorThemeId, array $customColors = []): array
     {
         try {
-            Log::info('Generating variant images for color theme', ['color_theme_id' => $colorThemeId]);
+            Log::info('Generating variant images for color theme', [
+                'color_theme_id' => $colorThemeId,
+                'custom_colors_provided' => !empty($customColors)
+            ]);
 
             // Fetch ColorTheme
             $colorTheme = ColorTheme::findOrFail($colorThemeId);
-            $colors = json_decode($colorTheme->color_codes, true) ?? [];
-            if (empty($colors)) {
+
+            // Load original colors
+            $originalColors = json_decode($colorTheme->color_codes, true) ?? [];
+            if (empty($originalColors)) {
                 throw new Exception('No colors found in color theme');
             }
 
-            // Fetch associated AISuggestion
+            // Merge custom colors: override specific indices if provided
+            $finalColors = $originalColors;
+            foreach ($customColors as $index => $hex) {
+                if (isset($finalColors[$index])) {
+                    $finalColors[$index] = strtoupper($hex); // normalize
+                    Log::info("Overriding color at index {$index}", ['new' => $hex]);
+                }
+            }
+
+            // Fetch associated AISuggestion for paths & season
             $aiSuggestion = AISuggestion::findOrFail($colorTheme->ai_suggestion_id);
             $season = strtolower($aiSuggestion->season_name);
             $bridePath = public_path($aiSuggestion->bride_image);
@@ -106,15 +120,17 @@ public function generateVariantImagesForTheme(int $colorThemeId): array
                 throw new Exception('Bride or groom image not found');
             }
 
-            // Generate 6 different images for this palette
-            $images = $this->generatePaletteImages($season, $colors, $bridePath, $groomPath, $colorThemeId);
+            // Generate 6 variant images using the (possibly modified) colors
+            $images = $this->generatePaletteImages($season, $finalColors, $bridePath, $groomPath, $colorThemeId);
 
-            // Update the color_theme with image paths as JSON
+            // Update database: save final used colors + generated images
+            $colorTheme->color_codes = json_encode($finalColors);
             $colorTheme->images = json_encode($images);
             $colorTheme->save();
 
-            Log::info('Variant images generated successfully and images field updated as JSON', [
+            Log::info('Variant images generated and database updated', [
                 'color_theme_id' => $colorThemeId,
+                'final_colors' => $finalColors,
                 'image_count' => count($images)
             ]);
 
@@ -125,12 +141,13 @@ public function generateVariantImagesForTheme(int $colorThemeId): array
                     'color_theme_id' => $colorThemeId,
                     'title' => $colorTheme->title,
                     'description' => $colorTheme->description,
-                    'colors' => $colors,
+                    'original_colors' => $originalColors,
+                    'final_colors' => $finalColors, // shows what was actually used
+                    'custom_colors_applied' => $customColors,
                     'season' => $season,
-                    'images' => $images  // Each image has 'url' for access
+                    'images' => $images
                 ]
             ];
-
         } catch (Exception $e) {
             Log::error('Error generating variant images: ' . $e->getMessage(), [
                 'color_theme_id' => $colorThemeId
@@ -176,19 +193,19 @@ public function generateVariantImagesForTheme(int $colorThemeId): array
     /**
      * 1. Groom and bride wedding image
      */
-   private function generateCoupleWeddingImage(string $season, array $colors, string $bridePath, string $groomPath, int $themeId): array
-{
-    $imagePrompt = "Create a romantic wedding photo of a bride and groom in {$season} season theme. They should be standing together in elegant wedding attire that complements these colors: " . implode(', ', $colors) . ". The scene should be photorealistic with soft lighting and romantic atmosphere. Focus on their joyful expressions and connection.";
+    private function generateCoupleWeddingImage(string $season, array $colors, string $bridePath, string $groomPath, int $themeId): array
+    {
+        $imagePrompt = "Create a romantic wedding photo of a bride and groom in {$season} season theme. They should be standing together in elegant wedding attire that complements these colors: " . implode(', ', $colors) . ". The scene should be photorealistic with soft lighting and romantic atmosphere. Focus on their joyful expressions and connection.";
 
-    $imageData = $this->generateImageWithFaces($imagePrompt, $bridePath, $groomPath);
-    $folder = 'couple_wedding_images';
-    $imagePath = $this->saveImageToPublic($imageData, "{$folder}/couple_wedding_{$season}_{$themeId}");
-    return [
-        'type' => 'couple_wedding',
-        'title' => 'Bride Groom Together',
-        'url' => $imagePath
-    ];
-}
+        $imageData = $this->generateImageWithFaces($imagePrompt, $bridePath, $groomPath);
+        $folder = 'couple_wedding_images';
+        $imagePath = $this->saveImageToPublic($imageData, "{$folder}/couple_wedding_{$season}_{$themeId}");
+        return [
+            'type' => 'couple_wedding',
+            'title' => 'Bride Groom Together',
+            'url' => $imagePath
+        ];
+    }
 
     private function generateBrideIndividualImage(string $season, array $colors, string $bridePath, int $themeId): array
     {
@@ -284,7 +301,7 @@ public function generateVariantImagesForTheme(int $colorThemeId): array
     {
         $colorString = implode(', ', $colors);
         $prompt = "Create a beautiful convention hall decorated for a {$season} wedding reception. Use these colors: {$colorString} for decorations, lighting, table settings, floral arrangements, and overall ambiance. Include elegant chandeliers, stage with backdrop, tables with centerpieces, and soft ambient lighting. The scene should be photorealistic, spacious, luxurious, and inviting, with a romantic wedding atmosphere. No people in the scene, focus on the decorated hall.";
-        
+
         $imageData = $this->generateImageWithFaces($prompt, $bridePath, $groomPath); // Using faces for consistency, but prompt focuses on hall
         $folder = 'convention_hall_images';
         $imagePath = $this->saveImageToPublic($imageData, "{$folder}/convention_hall_{$season}_{$themeId}", 'hall');
@@ -486,41 +503,38 @@ public function generateVariantImagesForTheme(int $colorThemeId): array
 
 
     /**
- * Save base64 image to public storage and return URL.
- * Supports dynamic subfolders like "bride_friends_images", "groom_friends_images", etc.
- */
-/**
- * Save base64 image to public storage and return full URL.
- */
-private function saveImageToPublic(?string $base64Data, string $filename): ?string
-{
-    if (!$base64Data) {
-        return null;
-    }
-
-    try {
-        $pathInfo = pathinfo($filename);
-        $relativeFolder = $pathInfo['dirname'] !== '.' ? $pathInfo['dirname'] : '';
-        $baseFilename = $pathInfo['filename'];
-
-        $publicFolder = public_path("uploads/images/weddings" . ($relativeFolder ? "/{$relativeFolder}" : ''));
-        if (!file_exists($publicFolder)) {
-            mkdir($publicFolder, 0755, true);
+     * Save base64 image to public storage and return URL.
+     * Supports dynamic subfolders like "bride_friends_images", "groom_friends_images", etc.
+     */
+    /**
+     * Save base64 image to public storage and return full URL.
+     */
+    private function saveImageToPublic(?string $base64Data, string $filename): ?string
+    {
+        if (!$base64Data) {
+            return null;
         }
 
-        $filePath = "{$publicFolder}/{$baseFilename}.jpg";
-        $imageData = base64_decode($base64Data);
-        file_put_contents($filePath, $imageData);
+        try {
+            $pathInfo = pathinfo($filename);
+            $relativeFolder = $pathInfo['dirname'] !== '.' ? $pathInfo['dirname'] : '';
+            $baseFilename = $pathInfo['filename'];
 
-        // ✅ Return full base URL (e.g. https://yourdomain.com/uploads/images/weddings/...)
-        $relativePath = "uploads/images/weddings" . ($relativeFolder ? "/{$relativeFolder}" : '') . "/{$baseFilename}.jpg";
-        return url($relativePath);
+            $publicFolder = public_path("uploads/images/weddings" . ($relativeFolder ? "/{$relativeFolder}" : ''));
+            if (!file_exists($publicFolder)) {
+                mkdir($publicFolder, 0755, true);
+            }
 
-    } catch (\Exception $e) {
-        Log::error('Failed to save image: ' . $e->getMessage());
-        return null;
+            $filePath = "{$publicFolder}/{$baseFilename}.jpg";
+            $imageData = base64_decode($base64Data);
+            file_put_contents($filePath, $imageData);
+
+            // ✅ Return full base URL (e.g. https://yourdomain.com/uploads/images/weddings/...)
+            $relativePath = "uploads/images/weddings" . ($relativeFolder ? "/{$relativeFolder}" : '') . "/{$baseFilename}.jpg";
+            return url($relativePath);
+        } catch (\Exception $e) {
+            Log::error('Failed to save image: ' . $e->getMessage());
+            return null;
+        }
     }
-}
-
-
 }

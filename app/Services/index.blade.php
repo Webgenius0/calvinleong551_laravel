@@ -39,23 +39,21 @@ class PromptProviderService
         $colors = implode(', ', array_merge($brideData['colors'] ?? [], $groomData['colors'] ?? []));
 
         $seasonDetails = match ($season) {
-            'spring' => 'blossoming garden path with pastel flowers and soft sunlight',
-            'summer' => 'sun-drenched beach path with vibrant tropical blooms and gentle ocean waves',
+            'spring' => 'blossoming garden with pastel flowers and soft sunlight',
+            'summer' => 'sun-drenched beach with vibrant tropical blooms and gentle ocean waves',
             'autumn' => 'golden forest path with falling leaves and warm harvest tones',
-            'winter' => 'serene snowy path with evergreen trees and twinkling lights',
-            default => 'beautiful seasonal outdoor path'
+            'winter' => 'serene snowy landscape with evergreen garlands and twinkling lights',
+            default => 'beautiful seasonal romantic landscape'
         };
 
-        return "Create a high-quality, photorealistic 1024x1024 PNG image of an elegant modest wedding scene for the {$season} season. 
+        return "Create a high-quality, photorealistic 1024x1024 PNG image of a romantic wedding scene for the {$season} season using Nano Banana style. 
         Incorporate skin tones: bride {$brideTone}, groom {$groomTone}. 
         Use dominant colors: {$colors} in outfits and accents. 
         Scene: {$seasonDetails}. 
-        Composition: Bride and groom walking separately side by side on the path (with clear visible personal space between them, no bodies or hands touching), both looking forward or at the camera with warm, loving, and joyful smiles. 
-        Classic modest wedding photography style similar to conservative portraits – convey romance and joy purely through expressions, beautiful attire, and the scenic background. 
-        
-        ***STRICTLY NO physical contact of any kind: no hand-holding, no hugging, no embracing, no arms linked, no touching shoulders/waist/arms/hands, no leaning toward each other, no kissing, no foreheads touching, no close face-to-face posing.***
-        
-        Professional wedding photography style, dreamy bokeh background, golden hour or soft natural lighting for warmth, ultra-detailed fabrics and nature elements, emotional and joyful vibe. 
+        Composition: Bride and groom standing elegantly side by side with visible personal space between them (at least arm's length apart), facing the camera or looking at each other with loving and joyful smiles, hands relaxed at sides or clasped in front. 
+        STRICTLY NO physical contact of any kind: no hugging, no embracing, no hand-holding, no arms around each other, no touching, no kissing, no foreheads touching, no close face-to-face posing. 
+        Maintain a modest, elegant, and romantic atmosphere through expressions and composition only. 
+        Dreamy bokeh background, golden hour lighting for warmth, ultra-detailed fabrics and nature elements, emotional and joyful vibe. 
         No text, logos, or distortions. 
         Generate an image as part of the response.";
     }
@@ -105,4 +103,13 @@ class PromptProviderService
 
         return $descriptions[$season] ?? 'A beautiful seasonal wedding theme.';
     }
+<div style="display:flex; gap:12px;">
+  <div style="width:80px;height:80px;background:#6A5ACD;"></div>
+  <div style="width:80px;height:80px;background:#DCDCDC;"></div>
+  <div style="width:80px;height:80px;background:#800020;"></div>
+  <div style="width:80px;height:80px;background:#F5DEB3;"></div>
+  <div style="width:80px;height:80px;background:#F5F5F5;"></div>
+</div>
+
+
 }
