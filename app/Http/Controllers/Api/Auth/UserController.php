@@ -58,11 +58,28 @@ class UserController extends Controller
         }
 
         // Convert DOB to MySQL compatible format
+        // if (!empty($validatedData['dob'])) {
+        //     try {
+        //         $validatedData['dob'] = Carbon::createFromFormat('d-m-Y', $validatedData['dob'])->format('Y-m-d');
+        //     } catch (\Exception $e) {
+        //         return Helper::jsonResponse(false, 'Invalid date format for date of birth. Expected format: DD-MM-YYYY', 422);
+        //     }
+        // }
+
+
         if (!empty($validatedData['dob'])) {
             try {
-                $validatedData['dob'] = Carbon::createFromFormat('d-m-Y', $validatedData['dob'])->format('Y-m-d');
+                // Now expecting YYYY-MM-DD
+                $validatedData['dob'] = Carbon::createFromFormat(
+                    'Y-m-d',
+                    $validatedData['dob']
+                )->format('Y-m-d');
             } catch (\Exception $e) {
-                return Helper::jsonResponse(false, 'Invalid date format for date of birth. Expected format: DD-MM-YYYY', 422);
+                return Helper::jsonResponse(
+                    false,
+                    'Invalid date format for date of birth. Expected format: YYYY-MM-DD',
+                    422
+                );
             }
         }
 
